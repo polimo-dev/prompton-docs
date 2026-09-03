@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+.DS_Store
+DESIGN-resend.md
+resend-brief.md
+README.md
+Makefile
+serve.mjs

@@ -1,0 +1,20 @@
+{
+  "name": "prompton-docs",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Public documentation site for PromptOn (docs.prompton.ai): Markdown in, static HTML + Markdown + llms.txt out.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "serve": "node build.mjs && node serve.mjs"
+  },
+  "dependencies": {
+    "highlight.js": "11.12.0",
+    "marked": "18.0.11",
+    "marked-gfm-heading-id": "4.1.4"
+  }
+}

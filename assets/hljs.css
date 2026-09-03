@@ -1,0 +1,51 @@
+/* highlight.js theme for PromptOn Docs — restrained, on the surface-deep code well.
+   Base colours come from site.css (--tx-body on --bg-1); this file only tints token classes. */
+.hljs { color: inherit; background: transparent; }
+
+.hljs-comment,
+.hljs-quote,
+.hljs-meta .hljs-string { color: #888e90; }
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-doctag,
+.hljs-name,
+.hljs-meta { color: #c4b5fd; }
+
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-template-tag { color: #9dd5b0; }
+
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link,
+.hljs-selector-attr,
+.hljs-selector-pseudo { color: #f2c98c; }
+
+.hljs-built_in,
+.hljs-type,
+.hljs-class .hljs-title,
+.hljs-title.class_,
+.hljs-title.function_,
+.hljs-function .hljs-title,
+.hljs-section { color: #8ec5ff; }
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-property,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-params,
+.hljs-selector-id,
+.hljs-selector-class { color: #fcfdff; }
+
+.hljs-punctuation,
+.hljs-operator,
+.hljs-tag { color: rgba(252, 253, 255, 0.7); }
+
+.hljs-deletion { color: #ff8095; }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 500; }

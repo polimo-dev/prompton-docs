@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.DS_Store
+
+# design references stay local
+DESIGN-resend.md
+resend-brief.md

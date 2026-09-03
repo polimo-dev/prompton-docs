@@ -1,0 +1,44 @@
+# prompton-docs — static documentation with Accept negotiation.
+# Extensionless URLs (/agent) return HTML to browsers and Markdown to everything else
+# (curl, coding agents, fetch with Accept: */*). /agent.md and /agent.html are explicit.
+# Only nginx variables ($uri, $http_accept) appear below; the image's envsubst touches none of them.
+
+map $http_accept $doc_variant {
+  default      ".md";
+  "~*text/html" ".html";
+}
+
+server {
+  listen 8080;
+  server_name _;
+  root /usr/share/nginx/html;
+
+  include /etc/nginx/mime.types;
+  types { text/markdown md; }
+  charset utf-8;
+  charset_types text/html text/plain text/markdown text/css application/javascript;
+
+  gzip on;
+  gzip_types text/css text/plain text/markdown application/javascript image/svg+xml;
+
+  location = /health { default_type text/plain; return 200 "ok\n"; }
+
+  # The site root: index.html for browsers, index.md for programs.
+  location = / {
+    try_files /index$doc_variant =404;
+    add_header Vary Accept;
+    add_header Cache-Control "public, max-age=300";
+  }
+
+  location = /llms.txt {
+    types { }
+    default_type text/plain;
+    add_header Cache-Control "public, max-age=300";
+  }
+
+  location / {
+    try_files $uri $uri$doc_variant $uri.html =404;
+    add_header Vary Accept;
+    add_header Cache-Control "public, max-age=300";
+  }
+}
