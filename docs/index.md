@@ -12,24 +12,30 @@ PromptOn is the control plane for your app's LLM prompts. For every **use case**
 
 ### Paste this into your coding AI
 
-This is the prompt from the landing page. Paste it into Claude Code, Codex, Cursor, or whatever runs in your codebase; it installs the CLI, migrates every LLM call, and shows you the diff first.
+This is the prompt from the landing page. Paste it into Claude Code, Codex, Cursor, or whatever runs in your codebase. It explains PromptOn, checks whether your app is a fit before asking you to sign up for anything, writes a migration plan and waits for your OK, then migrates in a new git worktree and shows you the diff.
 
 ```text
-Set up PromptOn for this app.
+Set up PromptOn for this app. Read __DOCS_URL__/agent first and
+follow it step by step.
 
-1. Install the CLI (curl -fsSL __HOME_URL__/install.sh | sh) and run
-   `prompton login`. Wait for me to approve it in the browser.
-2. Find every LLM call in this codebase. For each one, create a use case in
-   PromptOn, move its prompt and model there, and deploy it to production.
-3. Change each call to fetch its prompt, model, and parameters from PromptOn.
-   Keep our own API keys and HTTP calls — PromptOn is config, not a proxy.
-4. Report each call's result to PromptOn as a monitoring log.
-5. Show me the diff before you change anything.
-
-Everything you need is here: __DOCS_URL__/agent
+1. Tell me what PromptOn is, in a few sentences.
+2. Make sure you can see this project's code. If you can't, tell me to paste
+   this into an AI that can, and stop. If you see several projects, ask which.
+3. Check the fit: find every LLM call. PromptOn is for apps whose server calls
+   LLM providers for several use cases, each with its own prompt and model.
+   If that's not this app, say so and stop.
+4. Install the CLI (curl -fsSL __HOME_URL__/install.sh | sh) and run
+   `prompton login`. Walk me through signing up and approving it, then wait.
+5. Write a migration plan from how our prompts are managed today. Wait for
+   my OK.
+6. Migrate in a new git worktree (ask me first if this isn't a git repo).
+   Use the official PromptOn SDK for our language if there is one; otherwise
+   follow the guide's client section. Keep our provider keys and HTTP calls.
+   If PromptOn is ever unreachable, keep using the last snapshot you fetched.
+7. Show me the diff.
 ```
 
-The page the last line points at is the [agent reference](/agent): the whole contract on one page, written for a program to read.
+The page the first line points at is the [agent reference](/agent): the whole contract on one page, written for a program to read.
 
 ### Or do it by hand
 

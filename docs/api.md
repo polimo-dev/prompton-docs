@@ -138,7 +138,7 @@ provider_options = model.provider_options <- deployment.provider_options
 
 An environment with no deployments is not an error: `deployments` and `prompt_versions` are `{}`. An unknown environment is `404` with `details.environment`; an empty `environment=` is `400`.
 
-Polling advice: poll every 30–60 seconds with `If-None-Match`, keep the last good document in memory and on disk, and keep serving it when a poll fails. The server caches the snapshot per environment for about 5 seconds, so a just-committed revision can lag that long here (never on `/resolve`).
+Polling advice: poll every 10 seconds by default with `If-None-Match` (a `304` carries no body), keep the last good document in memory and on disk, and keep serving it when a poll fails. The server caches the snapshot per environment for about 5 seconds, so a just-committed revision can lag that long here (never on `/resolve`).
 
 ## POST /resolve
 

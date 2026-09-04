@@ -276,4 +276,4 @@ Run it again with the same `id` and the answer is `{"accepted": 0, "duplicates":
 - Open a second prompt name for a language variant: `prompton prompts open diary_generation ko --description Korean`, commit a version, and redeploy with `--pin default=latest --pin ko=latest`. The app selects it with `"prompt": "ko"`.
 - Promote to another environment with the same pins: `prompton deploy diary_generation --environment staging --model anthropic/claude-sonnet-4 --params '{"temperature":0.4}'`.
 - Roll back: `prompton rollback diary_generation --environment production --revision 1`.
-- Wire the app: the [agent reference](/agent) has the migration recipe and the local resolve algorithm; the [runtime API](/api) has every field.
+- Wire the app: the [agent reference](/agent) has the migration journey, the SDK status per language, and the local resolve algorithm; the [runtime API](/api) has every field.
