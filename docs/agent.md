@@ -648,7 +648,7 @@ Rules:
 - Send failures too (`status: "error"` + `error`); error rates and truncation rates are meaningless without them.
 - Payload storage follows the use case's `payload_policy` from the snapshot: `mode` `full` stores `input`/`output` (encrypted at rest), sampled by `sample_rate` on a hash of `id` — errors and `stop_kind: "length"` are always kept; `hash` keeps only sha256 + byte size; `none` drops it. A client may pre-hash by sending `input`/`output` as `{"sha256": "<64 hex>", "bytes": n}`.
 - Truncate before sending, relative to `max_bytes` (default 262144): one message `content` ≤ `max_bytes/8`; `input.messages`, `input.text`, `input.variables` ≤ `max_bytes` each; `output.content` and `output.tool_calls` ≤ `max_bytes/4`. Keep head and tail, set `"truncated": true`. The server re-checks with the same rules. Strings with NUL bytes or invalid UTF-8 are rejected per record.
-- Free plan: 10,000 logs / month with 7-day retention. Not enforced yet; when billing ships, overage degrades softly (counts kept, payloads dropped).
+- Retention is per plan and per use case: Free keeps the most recent 1,000 logs of each use case for at most 7 days, Team 100,000 for 30 days, Pro 100,000 for 90 days. Older logs and their payloads are purged nightly; ingest is never refused for retention. Free also caps an organization at 2 projects and a project at 10 use cases — creates beyond that fail with a clear message naming the plan.
 
 ## 5. Do / don't
 

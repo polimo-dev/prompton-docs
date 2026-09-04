@@ -337,7 +337,7 @@ Truncate before sending, keep head and tail, and set `"truncated": true`; the se
 - Batch on a size or time trigger; never one HTTP call per generation.
 - Never resend records that were accepted; read `rejected` and fix those.
 - `503` is the only status worth retrying; on `4xx`, fix the record.
-- Free plan (from the product specification, not enforced yet): 10,000 monitoring logs a month with 7-day retention. When billing launches, overage degrades softly (counts are kept, payloads are dropped) rather than hard-cutting.
+- Retention is per plan and per use case: the Free plan keeps the most recent 1,000 monitoring logs of each use case for at most 7 days (whichever bites first); Team keeps 100,000 for 30 days, Pro 100,000 for 90 days. Older logs and their payloads are purged nightly; ingest itself is never refused for retention.
 
 ## Rate limits
 
