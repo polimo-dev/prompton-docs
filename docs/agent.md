@@ -615,7 +615,7 @@ Poll every 10 s by default with `If-None-Match` (a `304` costs nothing); keep th
  "warnings": [], "etag": "sha256-…"}
 ```
 
-Errors: 400 `invalid_request` — `variables` not an object, `prompt` not a non-empty string, environment not a string, or a required variable missing (`{"details": {"missing_variable": "question"}}`); 404 `not_found` — unknown use case (`{"details": {"key": "nope"}}`), no live deployment (`{"details": {"reason": "unresolved"}}`), unpinned prompt name (`{"details": {"reason": "unknown_prompt", "prompt": "ja", "prompt_names": ["default", "ko"]}}`), unknown environment. Not cached: a just-committed revision shows immediately.
+Errors: 400 `invalid_request` — `variables` not an object, `prompt` not a non-empty string, environment not a string, or a required variable missing (`{"details": {"missing_variable": "question"}}`); 404 `not_found` — unknown use case (`{"details": {"key": "nope"}}`), no live deployment (`{"details": {"reason": "unresolved"}}`), unpinned prompt name (`{"details": {"reason": "unknown_prompt", "key": "support_reply", "prompt": "ja", "prompt_names": ["default", "ko"]}}`), unknown environment. Not cached: a just-committed revision shows immediately.
 
 ### 4.3 `POST /logs?environment=production` — monitoring logs
 
