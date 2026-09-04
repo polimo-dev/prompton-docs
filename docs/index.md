@@ -66,6 +66,23 @@ Sign-up and sign-in are the same step. There are no passwords.
 | [Agent reference](/agent) | The single page a coding agent reads to migrate an app |
 | [Security](/security) | Sign-in, session revocation, encryption at rest, what PromptOn never sees |
 
+## SDKs
+
+There is an official PromptOn SDK for eight languages. Each one is written and tested, lives in its own repository under [polimo-dev](https://github.com/polimo-dev), and is **not on a package registry yet** — until it is, depend on the repository. The [agent reference](/agent) has the install line and the registry check for each.
+
+| Language | Package | Repository |
+|---|---|---|
+| Python | `prompton-sdk` on PyPI, `import prompton` | [prompton-python](https://github.com/polimo-dev/prompton-python) |
+| Node.js / TypeScript | `prompton-sdk` on npm | [prompton-nodejs](https://github.com/polimo-dev/prompton-nodejs) |
+| Go | `github.com/polimo-dev/prompton-go` | [prompton-go](https://github.com/polimo-dev/prompton-go) |
+| Ruby | `prompton-sdk` on RubyGems, `require "prompton"` | [prompton-ruby](https://github.com/polimo-dev/prompton-ruby) |
+| Java | `dev.polimo:prompton-sdk`, package `dev.polimo.prompton` | [prompton-java](https://github.com/polimo-dev/prompton-java) |
+| Kotlin | `dev.polimo:prompton-sdk`, package `dev.polimo.prompton` | [prompton-kotlin](https://github.com/polimo-dev/prompton-kotlin) |
+| Rust | crate `prompton-sdk`, `use prompton::…` | [prompton-rust](https://github.com/polimo-dev/prompton-rust) |
+| Elixir | `prompton_sdk` on Hex, module `PromptOnSDK` | [prompton-elixir](https://github.com/polimo-dev/prompton-elixir) |
+
+All eight implement the same contract: a 10-second snapshot cache with ETag polling, a memory → disk → bundled-snapshot fallback so your app keeps running when PromptOn is unreachable, local prompt rendering, and batched monitoring logs. They call no external service of their own. For any other language, your coding agent writes the client from the [agent reference](/agent).
+
 ## Source code
 
-PromptOn is on GitHub under [polimo-dev](https://github.com/polimo-dev): [prompton](https://github.com/polimo-dev/prompton) — the server and the Elixir SDK (FSL-1.1-ALv2; the SDK is Apache-2.0) · [prompton-cli](https://github.com/polimo-dev/prompton-cli) — the CLI (Apache-2.0) · [prompton-home](https://github.com/polimo-dev/prompton-home) — the landing page (MIT) · [prompton-docs](https://github.com/polimo-dev/prompton-docs) — this site (MIT for the code, CC BY 4.0 for the pages).
+PromptOn is on GitHub under [polimo-dev](https://github.com/polimo-dev): [prompton](https://github.com/polimo-dev/prompton) — the server (FSL-1.1-ALv2) · [prompton-cli](https://github.com/polimo-dev/prompton-cli) — the CLI (Apache-2.0) · the eight SDK repositories listed above (Apache-2.0) · [prompton-home](https://github.com/polimo-dev/prompton-home) — the landing page (MIT) · [prompton-docs](https://github.com/polimo-dev/prompton-docs) — this site (MIT for the code, CC BY 4.0 for the pages).
