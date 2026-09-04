@@ -491,7 +491,7 @@ POST /orgs/:org/projects/:project/use-cases/:key/prompts/:name/versions
 // 201
 {"id": "…", "prompt_id": "…", "number": 1, "engine": "liquid", "messages": [...], "text_template": null,
  "detected_variables": ["question"], "message": "migrated from the app", "content_sha256": "…", "created_at": "…"}
-// 400 content does not match kind / lint failure / a message missing role or content · 404 unknown name {"details": {"prompt": "ja", "available_prompts": ["default"]}}
+// 400 content does not match kind / lint failure / a message missing role or content · 404 unknown name {"details": {"prompt": "ja", "prompt_names": ["default"]}}
 ```
 
 Versions are immutable; committing again yields `number + 1`. Committing alone changes nothing at runtime.

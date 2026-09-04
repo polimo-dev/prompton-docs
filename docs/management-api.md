@@ -416,7 +416,7 @@ curl -sS -X POST "__APP_URL__/api/v1/orgs/personal/projects/helpdesk/use-cases/s
 }
 ```
 
-Versions are immutable; committing again yields `number + 1`. Committing alone changes nothing at runtime. Liquid templates are linted on commit (tags `for`, `if`, `unless`, `assign`, `break`, `continue`; filters `size`, `join`, `default`; no whitespace control), and `detected_variables` is the list of top-level variables found, ready to mirror into `input_schema`. Errors: content that does not match the use case's kind, a lint failure, a message without `role` or `content` → `400`; unknown prompt name → `404` with `details.prompt` and `details.available_prompts`.
+Versions are immutable; committing again yields `number + 1`. Committing alone changes nothing at runtime. Liquid templates are linted on commit (tags `for`, `if`, `unless`, `assign`, `break`, `continue`; filters `size`, `join`, `default`; no whitespace control), and `detected_variables` is the list of top-level variables found, ready to mirror into `input_schema`. Errors: content that does not match the use case's kind, a lint failure, a message without `role` or `content` → `400`; unknown prompt name → `404` with `details.prompt` and `details.prompt_names`.
 
 ## Models
 
