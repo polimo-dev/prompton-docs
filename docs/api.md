@@ -1,12 +1,12 @@
 ---
 title: Runtime API
-description: The three endpoints an app calls with a runtime key — snapshot, resolve, and generations — with every field, error, and limit.
+description: The three endpoints an app calls with a runtime key — use-case documents, rendered prompts, and logs — with every field, error, and limit.
 order: 5
 ---
 
 # Runtime API
 
-The runtime API does two things: it hands your app its configuration (**config-fetch**: `GET /snapshot`, `POST /resolve`) and it receives what happened (**monitoring logs**: `POST /generations`). Your app calls the model provider itself, with its own key. There is no proxy endpoint. Provisioning (creating projects, use cases, prompts, deployments, keys) is a different layer with a different credential; see the [management API](/management-api).
+The runtime API does two things: it hands your app its configuration (**config-fetch**: `GET /use-cases`, `POST /use-cases/:key/prompt`) and it receives what happened (**logs**: `POST /logs`). Your app calls the model provider itself, with its own key. There is no proxy endpoint. Provisioning (creating projects, use cases, prompts, deployments, keys) is a different layer with a different credential; see the [management API](/management-api).
 
 ## Conventions
 
@@ -17,14 +17,14 @@ The runtime API does two things: it hands your app its configuration (**config-f
 | Environment | A request parameter, `environment` (query string or JSON body), default `production`. Keys are not tied to an environment |
 | Format | JSON in and out; snake_case keys; ids are bare UUID strings; timestamps are ISO 8601 UTC |
 | Body limit | 5 MB; larger requests get `413` with code `payload_too_large` |
-| Versioning | v1 only adds fields. The snapshot carries an integer `schema_version` (currently `3`) |
+| Versioning | v1 only adds fields. The use-case document carries an integer `schema_version` (currently `4`) |
 
 ### Scopes
 
 | Scope | Opens |
 |---|---|
-| `resolve` | `GET /snapshot`, `POST /resolve` |
-| `logs` | `POST /generations` |
+| `read` | `GET /use-cases`, `POST /use-cases/:key/prompt` |
+| `logs` | `POST /logs` |
 
 ### Errors
 
@@ -38,22 +38,22 @@ Every error, including 404 for an unknown route and 413 for an oversized body, i
 |---|---|---|
 | 400 | `invalid_request` | Missing or malformed field. `details` names the field where useful |
 | 401 | `unauthorized` | No key, wrong key, revoked key, the key's project is archived, or a CLI session token was used here |
-| 403 | `forbidden` | The key lacks the scope (`message`: `API key lacks the resolve scope`) |
+| 403 | `forbidden` | The key lacks the scope (`message`: `API key lacks the read scope`) |
 | 404 | `not_found` | Unknown use case, environment, prompt name, or no live deployment. `details` says which |
 | 413 | `payload_too_large` | Body over 5 MB |
 | 500 | `internal_error` | Server error; internal messages are never included |
-| 503 | `unavailable` | Storage failure on `/generations`; `Retry-After` header and `details.retry_after` in seconds |
+| 503 | `unavailable` | Storage failure on `/logs`; `Retry-After` header and `details.retry_after` in seconds |
 
 Ash validation errors come back as 400 with `details.errors` as a list of `{"field", "message"}`.
 
 Two unauthenticated endpoints exist for load balancers: `GET /health` answers `{"status": "ok"}`; `GET /health/ready` answers `{"status": "ok", "db": "ok", "migrations": "ok"}` or 503 when the database is unreachable or migrations are pending.
 
-## GET /snapshot
+## GET /use-cases
 
-The production path. One request returns everything live in one environment: every deployment, the prompt versions and models they pin, and the use case metadata. Resolve locally, cache it, poll for changes.
+The production path. One request returns the use-case document for one environment: every deployment, the prompt versions and models they pin, and the use case metadata. Read it locally, cache it, poll for changes.
 
 ```sh
-curl -sS "__APP_URL__/api/v1/snapshot?environment=production" \
+curl -sS "__APP_URL__/api/v1/use-cases?environment=production" \
   -H "Authorization: Bearer $PTN_KEY" \
   -H 'If-None-Match: "sha256-9f2e5c1a…"'
 ```
@@ -66,13 +66,13 @@ Response headers:
 | `Last-Modified` | The newest change among the live deployments and the resources they pin |
 | `Cache-Control` | `max-age=30` |
 
-Send the ETag back as `If-None-Match` (quoted, weak `W/"…"`, or in a comma-separated list) and an unchanged snapshot answers `304` with an empty body and the same `ETag`.
+Send the ETag back as `If-None-Match` (quoted, weak `W/"…"`, or in a comma-separated list) and an unchanged use-case document answers `304` with an empty body and the same `ETag`.
 
-Body (`schema_version` 3):
+Body (`schema_version` 4):
 
 ```json
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "project": "helpdesk",
   "environment": "production",
   "use_cases": {
@@ -127,51 +127,51 @@ Body (`schema_version` 3):
 | `prompt_versions` | Keyed by version id. Chat versions carry `messages` (each `role`, `content`, and `name` when set); text versions carry `text_template` |
 | `models` | Keyed by catalog id. `model_id` is the provider-side string your app sends to the provider |
 
-Resolve locally (`<-` is a shallow merge, right side wins):
+Read locally (`<-` is a shallow merge, right side wins):
 
 ```text
-deployment       = snapshot.deployments[use_case]                     # absent: no live deployment (an error, not a fallback)
-version          = snapshot.prompt_versions[deployment.prompt_pins[prompt_name or "default"]]   # name not pinned: an error
-model            = snapshot.models[deployment.model_id]
-params           = snapshot.use_cases[use_case].default_params <- deployment.params
+deployment       = document.deployments[use_case]                     # absent: no live deployment (an error, not a fallback)
+version          = document.prompt_versions[deployment.prompt_pins[prompt_name or "default"]]   # name not pinned: an error
+model            = document.models[deployment.model_id]
+params           = document.use_cases[use_case].default_params <- deployment.params
 provider_options = model.provider_options <- deployment.provider_options
 ```
 
 An environment with no deployments is not an error: `deployments` and `prompt_versions` are `{}`. An unknown environment is `404` with `details.environment`; an empty `environment=` is `400`.
 
-Polling advice: poll every 10 seconds by default with `If-None-Match` (a `304` carries no body), keep the last good document in memory and on disk, and keep serving it when a poll fails. The server caches the snapshot per environment for about 5 seconds, so a just-committed revision can lag that long here (never on `/resolve`).
+Polling advice: poll every 10 seconds by default with `If-None-Match` (a `304` carries no body), keep the last good document in memory and on disk, and keep serving it when a poll fails. The server caches the use-case document per environment for about 5 seconds, so a just-committed revision can lag that long here (never on `/use-cases/:key/prompt`).
 
-## POST /resolve
+## POST /use-cases/:key/prompt
 
-The reference implementation of the resolve algorithm, run on the server. Use it to smoke-test a deployment, to debug rendering, or from a client that does not want to implement resolve itself. It is not cached: a revision committed a moment ago shows immediately. Do not call it once per request on a hot path; cache the snapshot instead.
+The server-side prompt filler. Use it to smoke-test a deployment, to debug template filling, or from a client that does not want to fill prompts locally. It is not cached: a revision committed a moment ago shows immediately. Do not call it once per request on a hot path; cache the use-case document instead.
 
 ```sh
-curl -sS "__APP_URL__/api/v1/resolve" \
+curl -sS "__APP_URL__/api/v1/use-cases/support_reply/prompt" \
   -H "Authorization: Bearer $PTN_KEY" \
   -H 'content-type: application/json' \
-  -d '{"use_case": "support_reply", "environment": "production", "prompt": "ko",
+  -d '{"environment": "production", "prompt": "ko",
        "variables": {"question": "My invoice shows two charges this month."}}'
 ```
 
 | Request field | Required | Notes |
 |---|---|---|
-| `use_case` | yes | The use case key |
 | `environment` | no | Default `production` |
 | `prompt` | no | Prompt name; default `default`. The only selection axis |
 | `variables` | no | An object. Present: the template is rendered. Absent: the raw template is returned |
 
 ```json
 {
-  "use_case": "support_reply",
+  "key": "support_reply",
   "kind": "chat",
   "deployment": {"id": "019916f7-8b19-7c56-a3e2-5d0f1b7c9e64", "revision": 3},
   "prompt": "ko",
-  "prompts": ["default", "ko"],
+  "prompt_names": ["default", "ko"],
   "model_id": "019916f6-0e5a-7b34-8d1c-2f7e9a3b5c48",
   "model": "openai/gpt-4o-mini",
   "provider": "openrouter",
-  "effective_params": {"temperature": 0.3},
-  "effective_provider_options": {"only": ["OpenAI"], "allow_fallbacks": false},
+  "params": {"temperature": 0.3},
+  "provider_options": {"only": ["OpenAI"], "allow_fallbacks": false},
+  "source": "remote",
   "prompt_version": {"id": "019916fa-1b2c-7d3e-8f4a-5b6c7d8e9f01", "number": 1},
   "messages": [
     {"role": "system", "content": "당신은 Acme의 친절한 고객 지원 상담원입니다."},
@@ -186,37 +186,38 @@ This request asked for `"prompt": "ko"`, the Korean variant of `support_reply`, 
 
 | Response field | Notes |
 |---|---|
-| `prompts` | Every prompt name the live revision pins |
+| `prompt_names` | Every prompt name the live revision pins |
 | `model` / `provider` | The provider-side model string and provider name to call |
-| `effective_params`, `effective_provider_options` | After layering, ready to send |
+| `params`, `provider_options` | After layering, ready to send |
+| `source` | Where the deployed use-case document came from (`remote` for this endpoint) |
 | `prompt_version` | `null` for `embedding` |
-| `messages` | `chat` only. For `text` the field is `text` (a string). `embedding` has neither, with `prompt` `null` and `prompts` `[]` |
+| `messages` | `chat` only. For `text` the field is `text` (a string). `embedding` has neither, with `prompt` `null` and `prompt_names` `[]` |
 | `warnings` | Strings such as `missing_model: <id>` |
-| `etag` | The snapshot ETag this answer was resolved from, without quotes |
+| `etag` | The use-case document ETag this answer was read from, without quotes |
 
 Errors:
 
 | HTTP | `code` | `details` | When |
 |---|---|---|---|
-| 400 | `invalid_request` | | `use_case` missing or not a string; `variables` not an object; `prompt` not a non-empty string; `environment` not a string |
+| 400 | `invalid_request` | | `variables` not an object; `prompt` not a non-empty string; `environment` not a string |
 | 400 | `invalid_request` | `{"missing_variable": "question"}` | A variable the template needs was not sent |
-| 404 | `not_found` | `{"use_case": "nope"}` | Unknown use case |
+| 404 | `not_found` | `{"key": "nope"}` | Unknown use case |
 | 404 | `not_found` | `{"environment": "canary"}` | Unknown environment |
 | 404 | `not_found` | `{"reason": "unresolved"}` | No live deployment in that environment |
 | 404 | `not_found` | `{"reason": "unknown_prompt", "prompt": "ja", "available_prompts": ["default", "ko"]}` | The name is not pinned by the live revision |
 
-## POST /generations
+## POST /logs
 
 Monitoring logs: batched, idempotent, partially accepted. Send one record per model call your app made, including failures, in batches. The `environment` parameter is forced onto the whole batch, so send one batch per environment.
 
 ```sh
-curl -sS "__APP_URL__/api/v1/generations?environment=production" \
+curl -sS "__APP_URL__/api/v1/logs?environment=production" \
   -H "Authorization: Bearer $PTN_KEY" \
   -H 'content-type: application/json' \
   -d @batch.json
 ```
 
-Request body: `{"generations": [ … ]}`, at most 200 records. A body that is not that shape, or has more than 200 records, is `400`.
+Request body: `{"logs": [ … ]}`, at most 200 records. A body that is not that shape, or has more than 200 records, is `400`.
 
 ```json
 {
@@ -232,7 +233,7 @@ Request body: `{"generations": [ … ]}`, at most 200 records. A body that is no
   "prompt": "default",
   "prompt_version_id": "019916f5-3c7d-7a12-9e8f-6b4d2a0c1e93",
   "model_id": "019916f6-0e5a-7b34-8d1c-2f7e9a3b5c48",
-  "resolution_source": "remote",
+  "source": "remote",
   "provider": "openrouter",
   "model_used": "openai/gpt-4o-mini",
   "upstream_provider": "OpenAI",
@@ -264,10 +265,10 @@ Required fields: `id`, `use_case`, `model`, `status`, `started_at`.
 | `status` | `ok` \| `error` | |
 | `started_at` | ISO 8601 | At most 5 minutes in the future and 7 days in the past |
 | `kind` | `chat` \| `text` \| `embedding` | Default `chat` |
-| `deployment_id`, `prompt_version_id`, `model_id` | UUID or null | Soft references from the resolved pin |
+| `deployment_id`, `prompt_version_id`, `model_id` | UUID or null | Soft references from the selected pin |
 | `deployment_revision` | integer | |
 | `prompt` | string | The prompt name that was used |
-| `resolution_source` | `remote` \| `disk` \| `bundle` \| `manual` | Where the configuration came from |
+| `source` | `remote` \| `disk` \| `bundle` \| `manual` | Where the configuration came from |
 | `provider`, `model_used`, `upstream_provider` | string | `model_used` and `upstream_provider` are stored under `metadata` |
 | `params` | object | Over 4 KB: blanked and listed in `metadata.truncated_fields` |
 | `input` | object or string | `{"variables", "messages", "truncated"}` or `{"text", "truncated"}`; a plain string is stored as `{"text": "…"}` |
@@ -307,9 +308,9 @@ Per-record outcomes:
 | An `id` already stored by another project | `rejected` with `conflict` (`id already exists in another project`) |
 | Storage failure | `503 unavailable` with `Retry-After: 5`; resend the same batch with the same ids and the duplicates are absorbed |
 
-### Payload storage, sampling, and truncation
+### Log content storage, sampling, and truncation
 
-What happens to `input` and `output` follows the use case's `payload_policy` from the snapshot:
+What happens to `input` and `output` follows the use case's log content policy (`payload_policy`) from the use-case document:
 
 | `mode` | Stored |
 |---|---|
@@ -334,7 +335,7 @@ Truncate before sending, keep head and tail, and set `"truncated": true`; the se
 
 ### Batching rules
 
-- Batch on a size or time trigger; never one HTTP call per generation.
+- Batch on a size or time trigger; never one HTTP call per log.
 - Never resend records that were accepted; read `rejected` and fix those.
 - `503` is the only status worth retrying; on `4xx`, fix the record.
 - Retention is per plan and per use case: the Free plan keeps the most recent 1,000 monitoring logs of each use case for at most 7 days (whichever bites first); Team keeps 100,000 for 30 days, Pro 100,000 for 90 days. Older logs and their payloads are purged nightly; ingest itself is never refused for retention.

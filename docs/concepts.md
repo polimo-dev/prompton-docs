@@ -21,7 +21,7 @@ The top-level account boundary. Every user has a **personal** organization, crea
 
 ## Project
 
-A project belongs to one organization and is identified by a slug that is unique inside that organization (`helpdesk`). It owns the runtime API keys, the environments, the model catalog, and the default payload policy for monitoring logs. Web URL: `__APP_URL__/{org}/{project}`.
+A project belongs to one organization and is identified by a slug that is unique inside that organization (`helpdesk`). It owns the runtime API keys, the environments, the model catalog, and the default log content policy. Web URL: `__APP_URL__/{org}/{project}`.
 
 ## Environment
 
@@ -34,7 +34,7 @@ One use case per place your app calls an LLM. Its **key** (`support_reply`, lowe
 | Field | Meaning |
 |---|---|
 | `kind` | `chat` (a list of messages), `text` (one template string), or `embedding` (no prompt at all) |
-| `input_schema` | Declared variables: `name`, `type` (`string`, `number`, `boolean`, `list`, `map`), `required`, `description`, `example`. It documents what the template expects and is carried in the snapshot; values are not validated against it |
+| `input_schema` | Declared variables: `name`, `type` (`string`, `number`, `boolean`, `list`, `map`), `required`, `description`, `example`. It documents what the template expects and is carried in the use-case document; values are not validated against it |
 | `default_params` | Model parameters a deployment's `params` are layered over |
 | `name`, `description`, `tags` | For people |
 
@@ -69,11 +69,11 @@ The organization's **provider key** is a BYOK OpenRouter key. PromptOn uses it o
 
 ## Runtime API key
 
-A key your app puts in its environment. It belongs to one project, looks like `ptn_<project_slug>_<random>`, and carries scopes: `resolve` for config-fetch (`GET /snapshot`, `POST /resolve`) and `logs` for monitoring logs (`POST /generations`). The secret is shown once, at issue time; the server stores a hash and later lists only the `key_prefix`. A runtime key cannot call the management API.
+A key your app puts in its environment. It belongs to one project, looks like `ptn_<project_slug>_<random>`, and carries scopes: `read` for config-fetch (`GET /use-cases`, `POST /use-cases/:key/prompt`) and `logs` for monitoring logs (`POST /logs`). The secret is shown once, at issue time; the server stores a hash and later lists only the `key_prefix`. A runtime key cannot call the management API.
 
 ## Monitoring log
 
-One record per model call your app made, sent in batches to `POST /api/v1/generations` after the call: which use case and deployment revision, which model, tokens, cost, latency, stop reason, and whether it failed. Because PromptOn is not in the request path, these logs are its only view of production; send failures too. Input and output payloads are stored according to the use case's **payload policy** (`mode` `full`, `hash`, or `none`; `sample_rate`; `max_bytes`; `retention_days`; `encrypt`) and are encrypted at rest.
+One record per model call your app made, sent in batches to `POST /api/v1/logs` after the call: which use case and deployment revision, which model, tokens, cost, latency, stop reason, and whether it failed. Because PromptOn is not in the request path, these logs are its only view of production; send failures too. Input and output content is stored according to the use case's **log content policy** (`payload_policy`: `mode` `full`, `hash`, or `none`; `sample_rate`; `max_bytes`; `retention_days`; `encrypt`) and is encrypted at rest when that policy enables it.
 
 ## CLI session
 

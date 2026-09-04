@@ -6,7 +6,7 @@ order: 1
 
 # PromptOn documentation
 
-PromptOn is the control plane for your app's LLM prompts. For every **use case** (one per place your code calls a model) and every **environment** it holds one **pin**: a prompt version, a model, and parameters. Your app fetches that configuration (`GET /api/v1/snapshot` or `POST /api/v1/resolve`), calls the model provider itself with its own key, and reports each call back as a **monitoring log** (`POST /api/v1/generations`). PromptOn is config-fetch, not a proxy: it is never in the request path, it never sees your provider key, and if it is down your app keeps running on the last snapshot it fetched.
+PromptOn is the control plane for your app's LLM prompts. For every **use case** (one per place your code calls a model) and every **environment** it holds one **pin**: a prompt version, a model, and parameters. Your app fetches that configuration (`GET /api/v1/use-cases` or `POST /api/v1/use-cases/:key/prompt`), calls the model provider itself with its own key, and reports each call back as a **log** (`POST /api/v1/logs`). PromptOn is config-fetch, not a proxy: it is never in the request path, it never sees your provider key, and if it is down your app keeps running on the last use-case document it fetched.
 
 ## Two ways in
 
@@ -20,7 +20,7 @@ follow it step by step.
 
 1. Tell me what PromptOn is: one line, a before-and-after code example, why
    it isn't a proxy, and what it automates (picking the model and prompt per
-   use case, evaluating generations, catching drift).
+   use case, evaluating logs, catching drift).
 2. Make sure you can see this project's code. If you can't, tell me to paste
    this into an AI that can, and stop. If you see several projects, ask which.
 3. Check the fit: find every LLM call. PromptOn is for apps whose server calls
@@ -33,7 +33,7 @@ follow it step by step.
 6. Migrate in a new git worktree (ask me first if this isn't a git repo).
    Use the official PromptOn SDK for our language if there is one; otherwise
    follow the guide's client section. Keep our provider keys and HTTP calls.
-   If PromptOn is ever unreachable, keep using the last snapshot you fetched.
+   If PromptOn is ever unreachable, keep using the last use-case document you fetched.
 7. Show me the diff.
 ```
 
@@ -59,9 +59,9 @@ Sign-up and sign-in are the same step. There are no passwords.
 | Page | What it covers |
 |---|---|
 | [Concepts](/concepts) | Organizations, projects, environments, use cases, prompts and versions, deployments as pins, models, API keys, monitoring logs, CLI sessions |
-| [Quickstart](/quickstart) | Sign in, provision a project with the CLI, resolve a prompt with curl, send one monitoring log, see it in the app |
+| [Quickstart](/quickstart) | Sign in, provision a project with the CLI, fill a prompt with curl, send one log, see it in the app |
 | [CLI reference](/cli) | Installation, login, configuration precedence, every command, `--json`, exit codes, `--idempotent` |
-| [Runtime API](/api) | The endpoints your app calls with a runtime key: snapshot, resolve, generations |
+| [Runtime API](/api) | The endpoints your app calls with a runtime key: use-case documents, rendered prompts, logs |
 | [Management API](/management-api) | The endpoints the CLI calls with a session token: device login, organizations, and provisioning |
 | [Agent reference](/agent) | The single page a coding agent reads to migrate an app |
 | [Security](/security) | Sign-in, session revocation, encryption at rest, what PromptOn never sees |
@@ -81,7 +81,7 @@ There is an official PromptOn SDK for eight languages. Each one is written and t
 | Rust | crate `prompton-sdk`, `use prompton::…` | [prompton-rust](https://github.com/polimo-dev/prompton-rust) |
 | Elixir | `prompton_sdk` on Hex, module `PromptOnSDK` | [prompton-elixir](https://github.com/polimo-dev/prompton-elixir) |
 
-All eight implement the same contract: a 10-second snapshot cache with ETag polling, a memory → disk → bundled-snapshot fallback so your app keeps running when PromptOn is unreachable, local prompt rendering, and batched monitoring logs. They call no external service of their own. For any other language, your coding agent writes the client from the [agent reference](/agent).
+All eight implement the same contract: a 10-second use-case document cache with ETag polling, a memory → disk → bundled use-case document fallback so your app keeps running when PromptOn is unreachable, local prompt rendering, and batched logs. They call no external service of their own. For any other language, your coding agent writes the client from the [agent reference](/agent).
 
 ## Source code
 

@@ -36,16 +36,16 @@ Every CLI call runs as you, under your own organization and project memberships.
 
 ## Runtime keys
 
-A runtime key (`ptn_<project_slug>_…`) is scoped to one project and to at most two operations: reading configuration (`resolve`) and sending monitoring logs (`logs`). The secret is returned once at issue time; the server stores a SHA-256 hash and later shows only the first 16 characters. Keep it server-side; never ship it to a browser or mobile client.
+A runtime key (`ptn_<project_slug>_…`) is scoped to one project and to at most two operations: reading configuration (`read`) and sending logs (`logs`). The secret is returned once at issue time; the server stores a SHA-256 hash and later shows only the first 16 characters. Keep it server-side; never ship it to a browser or mobile client.
 
 ## Encryption at rest
 
 Two layers, on purpose:
 
-- **The database as a whole** is protected by the storage-level encryption of the managed database it runs on (block-volume / KMS encryption on the cloud provider). That covers disks, snapshots, and backups, and it is what "encrypted at rest" means for prompts, prompt versions, deployments, and everything else. Anyone holding the database credentials still reads those rows in the clear — that is how storage encryption works — so credentials are the boundary, and PromptOn is open source so you can run it on your own database with whatever policy you need.
+- **The database as a whole** is protected by the storage-level encryption of the managed database it runs on (block-volume / KMS encryption on the cloud provider). That covers disks, backups, prompts, prompt versions, deployments, and everything else. Anyone holding the database credentials still reads those rows in the clear — that is how storage encryption works — so credentials are the boundary, and PromptOn is open source so you can run it on your own database with whatever policy you need.
 - **Field-level encryption with a separate key** is reserved for the data that would hurt if the database contents leaked: monitoring-log content, provider keys, and pending device-login tokens (details below). Prompts are deliberately *not* field-encrypted: they are your configuration, they need to be searchable and diffable, and the storage layer already covers them.
 
-- Monitoring log payloads (`input` and `output`) are encrypted at rest with AES-256-GCM when the use case's payload policy has `encrypt` on, which is the default. The policy also controls sampling, size caps, retention, and whether payloads are stored at all (`mode` `full`, `hash`, or `none`). A client may pre-hash payloads so the text never leaves the app.
+- Log content (`input` and `output`) is encrypted at rest with AES-256-GCM when the use case's log content policy has `encrypt` on, which is the default. The policy also controls sampling, size caps, retention, and whether content is stored at all (`mode` `full`, `hash`, or `none`). A client may pre-hash content so the text never leaves the app.
 - Organization provider keys (BYOK OpenRouter keys) are encrypted at rest with AES-256-GCM and decrypted only when PromptOn itself calls a model. No endpoint returns the secret; responses carry a masked hint such as `sk-or-v1-••••4Xa2`.
 - Tokens waiting to be collected by a CLI during device login are encrypted at rest and deleted on collection.
 - Runtime keys are stored only as SHA-256 hashes.
@@ -55,5 +55,5 @@ Two layers, on purpose:
 PromptOn is never in your app's request path. Your app fetches configuration from PromptOn and calls the model provider directly with its own key and HTTP client; monitoring logs are sent afterwards, in batches. Consequences:
 
 - Your provider keys stay in your app. PromptOn does not need them and never sees them.
-- If PromptOn is unreachable, your app keeps running on the last snapshot it fetched. Deploys pause; requests do not.
+- If PromptOn is unreachable, your app keeps running on the last use-case document it fetched. Deploys pause; requests do not.
 - The optional organization provider key is used only where PromptOn itself runs a model on your behalf, such as the arena; onboarding finishes without one.

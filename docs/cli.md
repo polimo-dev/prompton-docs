@@ -180,7 +180,7 @@ Alias: `deployment`.
 
 | Command | What it does | Example |
 |---|---|---|
-| `api-keys issue [--name N] [--scopes resolve,logs]` | Mints a runtime key for the app; the secret is shown once | `prompton api-keys issue --name 'Helpdesk server' --scopes resolve,logs` |
+| `api-keys issue [--name N] [--scopes read,logs]` | Mints a runtime key for the app; the secret is shown once | `prompton api-keys issue --name 'Helpdesk server' --scopes read,logs` |
 | `api-keys list` | Live runtime keys, without secrets | `prompton api-keys list` |
 | `provider-key set [--secret S] [--label L]` | Stores the organization's OpenRouter key; the secret comes from `--secret`, then `PTN_OPENROUTER_KEY`, then a hidden prompt | `PTN_OPENROUTER_KEY=sk-or-v1-… prompton provider-key set` |
 | `provider-key status` | Whether a key is connected, and its masked hint | `prompton provider-key status` |

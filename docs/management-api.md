@@ -13,9 +13,9 @@ The management API creates things: projects, use cases, prompts and versions, mo
 | Credential | A **CLI session token** for one user, from `prompton login` | A **runtime key** `ptn_<project_slug>_…` for one project |
 | Caller | CLI, coding agents, scripts | The app at runtime |
 | Does | Creates and reads configuration | Fetches configuration, sends monitoring logs |
-| Paths | `/api/v1/me`, `/api/v1/sessions/revoke`, `/api/v1/orgs/…` | `/api/v1/snapshot`, `/api/v1/resolve`, `/api/v1/generations` |
+| Paths | `/api/v1/me`, `/api/v1/sessions/revoke`, `/api/v1/orgs/…` | `/api/v1/use-cases`, `/api/v1/use-cases/:key/prompt`, `/api/v1/logs` |
 
-Neither credential opens the other door: a runtime key on a management path is `401`, and a session token on `/snapshot` is `401`.
+Neither credential opens the other door: a runtime key on a management path is `401`, and a session token on `/use-cases` is `401`.
 
 There are no organization-level machine keys. Every call runs as the signed-in user, and what it may do is exactly what that user's organization and project memberships allow.
 
@@ -237,7 +237,7 @@ One organization, same shape as a list entry. A non-member or an unknown slug is
 9. POST /orgs/:org/provider-key                            optional; only for the arena and AI drafts
 ```
 
-Onboarding is done after step 8, when the runtime key answers `POST /api/v1/resolve`.
+Onboarding is done after step 8, when the runtime key answers `POST /api/v1/use-cases/:key/prompt`.
 
 In the examples below `$PTN_TOKEN` is a CLI session token and `:org` is `personal` or a team slug.
 
@@ -516,7 +516,7 @@ Promotion is this request again with another `environment` and the same `model_i
 {
   "api_keys": [
     {"id": "019916f8-4d2c-7e78-b5f1-7a3c9d0e2f16", "name": "Helpdesk server", "key_prefix": "ptn_helpdesk_a1b",
-     "scopes": ["resolve", "logs"], "last_used_at": "2026-09-03T05:00:00.000000Z", "created_at": "…"}
+     "scopes": ["read", "logs"], "last_used_at": "2026-09-03T05:00:00.000000Z", "created_at": "…"}
   ]
 }
 ```
@@ -526,7 +526,7 @@ No secrets; revoked keys are absent.
 ### POST /orgs/:org/projects/:project/api-keys
 
 ```json
-{"name": "Helpdesk server", "scopes": ["resolve", "logs"]}
+{"name": "Helpdesk server", "scopes": ["read", "logs"]}
 ```
 
 `name` defaults to `CLI key`; `scopes` defaults to both. `201`:
@@ -534,7 +534,7 @@ No secrets; revoked keys are absent.
 ```json
 {
   "id": "019916f8-4d2c-7e78-b5f1-7a3c9d0e2f16", "name": "Helpdesk server", "key_prefix": "ptn_helpdesk_a1b",
-  "scopes": ["resolve", "logs"], "last_used_at": null, "created_at": "…",
+  "scopes": ["read", "logs"], "last_used_at": null, "created_at": "…",
   "key": "ptn_helpdesk_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
 }
 ```
@@ -572,5 +572,5 @@ Its permissions are the user's, no more and no less:
 
 - Organizations the user is not a member of are invisible (`404`, and absent from `GET /orgs`).
 - Archiving and deleting projects, use cases, prompts, and models exist only in the web app.
-- Creating organizations, changing their name or slug, inviting members, adding or removing environments, and changing a project's payload policy are web-app actions.
-- The runtime endpoints `/snapshot`, `/resolve`, `/generations` need a runtime key (`401` otherwise).
+- Creating organizations, changing their name or slug, inviting members, adding or removing environments, and changing a project's log content policy are web-app actions.
+- The runtime endpoints `/use-cases`, `/use-cases/:key/prompt`, `/logs` need a runtime key (`401` otherwise).
