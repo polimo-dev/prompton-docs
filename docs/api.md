@@ -73,23 +73,24 @@ Body (`schema_version` 3):
 ```json
 {
   "schema_version": 3,
-  "project": "heydiary",
+  "project": "helpdesk",
   "environment": "production",
   "use_cases": {
-    "diary_generation": {
+    "support_reply": {
       "id": "019916f4-12b0-7e6c-a1d3-8c9f2b4e6a57",
       "kind": "chat",
-      "input_schema": [{"name": "transcriptions", "type": "list", "required": true}],
+      "input_schema": [{"name": "question", "type": "string", "required": true},
+                       {"name": "plan", "type": "string", "required": false}],
       "default_params": {"temperature": 0.5},
       "payload_policy": {"mode": "full", "sample_rate": 1.0, "max_bytes": 262144, "retention_days": 30, "encrypt": true}
     }
   },
   "deployments": {
-    "diary_generation": {
+    "support_reply": {
       "id": "019916f7-8b19-7c56-a3e2-5d0f1b7c9e64",
       "revision": 3,
       "model_id": "019916f6-0e5a-7b34-8d1c-2f7e9a3b5c48",
-      "params": {"temperature": 0.4},
+      "params": {"temperature": 0.3},
       "provider_options": {"allow_fallbacks": false},
       "prompt_pins": {"default": "019916f5-3c7d-7a12-9e8f-6b4d2a0c1e93", "ko": "019916fa-1b2c-7d3e-8f4a-5b6c7d8e9f01"}
     }
@@ -108,10 +109,10 @@ Body (`schema_version` 3):
     "019916f6-0e5a-7b34-8d1c-2f7e9a3b5c48": {
       "id": "019916f6-0e5a-7b34-8d1c-2f7e9a3b5c48",
       "provider": "openrouter",
-      "model_id": "anthropic/claude-sonnet-4",
-      "display_name": "Anthropic: Claude Sonnet 4",
+      "model_id": "openai/gpt-4o-mini",
+      "display_name": "OpenAI: GPT-4o-mini",
       "metadata": {},
-      "provider_options": {"only": ["Anthropic"]},
+      "provider_options": {"only": ["OpenAI"]},
       "capabilities": ["tools"],
       "status": "active"
     }
@@ -148,8 +149,8 @@ The reference implementation of the resolve algorithm, run on the server. Use it
 curl -sS "__APP_URL__/api/v1/resolve" \
   -H "Authorization: Bearer $PTN_KEY" \
   -H 'content-type: application/json' \
-  -d '{"use_case": "diary_generation", "environment": "production", "prompt": "ko",
-       "variables": {"transcriptions": ["a", "b"]}}'
+  -d '{"use_case": "support_reply", "environment": "production", "prompt": "ko",
+       "variables": {"question": "My invoice shows two charges this month."}}'
 ```
 
 | Request field | Required | Notes |
@@ -161,25 +162,27 @@ curl -sS "__APP_URL__/api/v1/resolve" \
 
 ```json
 {
-  "use_case": "diary_generation",
+  "use_case": "support_reply",
   "kind": "chat",
   "deployment": {"id": "019916f7-8b19-7c56-a3e2-5d0f1b7c9e64", "revision": 3},
   "prompt": "ko",
   "prompts": ["default", "ko"],
   "model_id": "019916f6-0e5a-7b34-8d1c-2f7e9a3b5c48",
-  "model": "anthropic/claude-sonnet-4",
+  "model": "openai/gpt-4o-mini",
   "provider": "openrouter",
-  "effective_params": {"temperature": 0.4},
-  "effective_provider_options": {"only": ["Anthropic"], "allow_fallbacks": false},
+  "effective_params": {"temperature": 0.3},
+  "effective_provider_options": {"only": ["OpenAI"], "allow_fallbacks": false},
   "prompt_version": {"id": "019916fa-1b2c-7d3e-8f4a-5b6c7d8e9f01", "number": 1},
   "messages": [
-    {"role": "system", "content": "당신은 사용자의 음성 기록으로 일기를 쓰는 작가입니다."},
-    {"role": "user", "content": "Write a diary from:\n\n1. a\n2. b\n"}
+    {"role": "system", "content": "당신은 Acme의 친절한 고객 지원 상담원입니다."},
+    {"role": "user", "content": "My invoice shows two charges this month."}
   ],
   "warnings": [],
   "etag": "sha256-9f2e5c1a7b3d8e4f6a0c2b9d1e7f3a5c8b4d6e2f0a1c3b5d7e9f2a4c6b8d0e1f"
 }
 ```
+
+This request asked for `"prompt": "ko"`, the Korean variant of `support_reply`, so the system message comes back in Korean; the user message is the same `{{ question }}` template rendered with the value that was sent.
 
 | Response field | Notes |
 |---|---|
@@ -196,7 +199,7 @@ Errors:
 | HTTP | `code` | `details` | When |
 |---|---|---|---|
 | 400 | `invalid_request` | | `use_case` missing or not a string; `variables` not an object; `prompt` not a non-empty string; `environment` not a string |
-| 400 | `invalid_request` | `{"missing_variable": "transcriptions"}` | A variable the template needs was not sent |
+| 400 | `invalid_request` | `{"missing_variable": "question"}` | A variable the template needs was not sent |
 | 404 | `not_found` | `{"use_case": "nope"}` | Unknown use case |
 | 404 | `not_found` | `{"environment": "canary"}` | Unknown environment |
 | 404 | `not_found` | `{"reason": "unresolved"}` | No live deployment in that environment |
@@ -218,35 +221,35 @@ Request body: `{"generations": [ … ]}`, at most 200 records. A body that is no
 ```json
 {
   "id": "019916f9-c0a1-7d9a-8f2e-3b5d7c1a9e02",
-  "use_case": "diary_generation",
-  "model": "anthropic/claude-sonnet-4",
+  "use_case": "support_reply",
+  "model": "openai/gpt-4o-mini",
   "status": "ok",
   "started_at": "2026-09-03T04:12:03.123Z",
 
   "kind": "chat",
   "deployment_id": "019916f7-8b19-7c56-a3e2-5d0f1b7c9e64",
   "deployment_revision": 3,
-  "prompt": "ko",
-  "prompt_version_id": "019916fa-1b2c-7d3e-8f4a-5b6c7d8e9f01",
+  "prompt": "default",
+  "prompt_version_id": "019916f5-3c7d-7a12-9e8f-6b4d2a0c1e93",
   "model_id": "019916f6-0e5a-7b34-8d1c-2f7e9a3b5c48",
   "resolution_source": "remote",
   "provider": "openrouter",
-  "model_used": "anthropic/claude-sonnet-4",
-  "upstream_provider": "Anthropic",
-  "params": {"temperature": 0.4},
-  "input": {"variables": {"transcriptions": ["a", "b"]},
+  "model_used": "openai/gpt-4o-mini",
+  "upstream_provider": "OpenAI",
+  "params": {"temperature": 0.3},
+  "input": {"variables": {"question": "My invoice shows two charges this month."},
             "messages": [{"role": "system", "content": "…"}, {"role": "user", "content": "…"}],
             "truncated": false},
   "output": {"content": "…", "tool_calls": [], "truncated": false},
   "finish_reason": "stop",
   "stop_kind": "stop",
-  "usage": {"input_tokens": 1830, "output_tokens": 412, "cost_usd": 0.00312, "cost_source": "provider", "raw": {}},
-  "latency_ms": 4180,
-  "trace_id": "job:88213",
+  "usage": {"input_tokens": 512, "output_tokens": 96, "cost_usd": 0.000134, "cost_source": "provider", "raw": {}},
+  "latency_ms": 940,
+  "trace_id": "ticket:88213",
   "sequence": 1,
-  "end_user_ref": "u_42",
-  "context": {"language": "ko", "plan": "pro"},
-  "metadata": {"job_id": 88213, "attempt": 1},
+  "end_user_ref": "cust_8f31",
+  "context": {"language": "en", "plan": "pro"},
+  "metadata": {"ticket_id": 88213},
   "sdk": {"name": "myapp-prompton-client", "version": "0.1.0"}
 }
 ```

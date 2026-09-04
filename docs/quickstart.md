@@ -39,14 +39,14 @@ If the CLI's built-in default host (`https://app.prompton.ai`) is not `__APP_URL
 ## 2. Create a project
 
 ```sh
-prompton projects create heydiary --name HeyDiary --json
+prompton projects create helpdesk --name Helpdesk --json
 ```
 
 ```json
 {
   "id": "019916f3-6a2e-7c41-8b5d-1f0a9c3e7d21",
-  "slug": "heydiary",
-  "name": "HeyDiary",
+  "slug": "helpdesk",
+  "name": "Helpdesk",
   "timezone": "Etc/UTC",
   "created_at": "2026-09-03T04:10:11.402113Z",
   "environments": [
@@ -59,33 +59,37 @@ prompton projects create heydiary --name HeyDiary --json
 `production` and `staging` are created with the project. Make it the default for the following commands:
 
 ```sh
-prompton use --project heydiary
+prompton use --project helpdesk
 ```
 
 ## 3. Create a use case
 
-One use case per call site. Declare the variables the prompt will use:
+One use case per call site. Declare the variables the app will pass:
 
 ```sh
 cat > schema.json <<'EOF'
-[{"name": "transcriptions", "type": "list", "required": true,
-  "description": "Today's voice notes, oldest first"}]
+[{"name": "question", "type": "string", "required": true,
+  "description": "The customer's message"},
+ {"name": "plan", "type": "string", "required": false,
+  "description": "free or pro"}]
 EOF
 
-prompton use-cases create diary_generation --kind chat --name 'Diary generation' \
+prompton use-cases create support_reply --kind chat --name 'Support reply' \
   --input-schema-file schema.json --default-params '{"temperature":0.5}' --json
 ```
 
 ```json
 {
   "id": "019916f4-12b0-7e6c-a1d3-8c9f2b4e6a57",
-  "key": "diary_generation",
-  "name": "Diary generation",
+  "key": "support_reply",
+  "name": "Support reply",
   "description": null,
   "kind": "chat",
   "input_schema": [
-    {"name": "transcriptions", "type": "list", "required": true,
-     "description": "Today's voice notes, oldest first", "example": null}
+    {"name": "question", "type": "string", "required": true,
+     "description": "The customer's message", "example": null},
+    {"name": "plan", "type": "string", "required": false,
+     "description": "free or pro", "example": null}
   ],
   "default_params": {"temperature": 0.5},
   "tags": [],
@@ -101,11 +105,11 @@ The file is your prompt as chat messages; placeholders are Liquid `{{ variable }
 
 ```sh
 cat > messages.json <<'EOF'
-[{"role": "system", "content": "You write diaries from voice transcriptions."},
- {"role": "user", "content": "Write a diary from:\n\n{% for t in transcriptions %}{{ forloop.index }}. {{ t }}\n{% endfor %}"}]
+[{"role": "system", "content": "You are a friendly support agent for Acme. Answer in two or three sentences; if you are not sure, say so and offer to escalate."},
+ {"role": "user", "content": "{{ question }}"}]
 EOF
 
-prompton prompts commit diary_generation default --file messages.json \
+prompton prompts commit support_reply default --file messages.json \
   --message "migrated from the app's hardcoded prompt" --json
 ```
 
@@ -116,11 +120,11 @@ prompton prompts commit diary_generation default --file messages.json \
   "number": 1,
   "engine": "liquid",
   "messages": [
-    {"role": "system", "content": "You write diaries from voice transcriptions."},
-    {"role": "user", "content": "Write a diary from:\n\n{% for t in transcriptions %}{{ forloop.index }}. {{ t }}\n{% endfor %}"}
+    {"role": "system", "content": "You are a friendly support agent for Acme. Answer in two or three sentences; if you are not sure, say so and offer to escalate."},
+    {"role": "user", "content": "{{ question }}"}
   ],
   "text_template": null,
-  "detected_variables": ["transcriptions"],
+  "detected_variables": ["question"],
   "message": "migrated from the app's hardcoded prompt",
   "content_sha256": "3f1c0b7e6a9d2c4b8e5f1a7d3c9b2e6f4a8d1c5b7e9f2a4c6d8b0e3f5a7c9d1b",
   "created_at": "2026-09-03T04:12:30.118764Z"
@@ -134,19 +138,19 @@ Nothing is live yet; a version goes live only when a deployment pins it.
 Optional: `deploy` registers a provider string it has not seen before. Registering first lets you check what the catalog knows about it.
 
 ```sh
-prompton models register anthropic/claude-sonnet-4 --json
+prompton models register openai/gpt-4o-mini --json
 ```
 
 ```json
 {
   "id": "019916f6-0e5a-7b34-8d1c-2f7e9a3b5c48",
   "provider": "openrouter",
-  "model_id": "anthropic/claude-sonnet-4",
-  "display_name": "Anthropic: Claude Sonnet 4",
+  "model_id": "openai/gpt-4o-mini",
+  "display_name": "OpenAI: GPT-4o-mini",
   "metadata": {},
   "provider_options": {},
-  "pricing": {"input_per_m": 3.0, "output_per_m": 15.0, "currency": "USD", "unit": "token"},
-  "context_length": 200000,
+  "pricing": {"input_per_m": 0.15, "output_per_m": 0.6, "currency": "USD", "unit": "token"},
+  "context_length": 128000,
   "capabilities": [],
   "status": "active",
   "created_at": "2026-09-03T04:13:05.551209Z"
@@ -158,8 +162,8 @@ prompton models register anthropic/claude-sonnet-4 --json
 ## 6. Deploy
 
 ```sh
-prompton deploy diary_generation --model anthropic/claude-sonnet-4 \
-  --params '{"temperature":0.4}' --json
+prompton deploy support_reply --model openai/gpt-4o-mini \
+  --params '{"temperature":0.3}' --json
 ```
 
 ```json
@@ -168,8 +172,8 @@ prompton deploy diary_generation --model anthropic/claude-sonnet-4 \
   "revision": 1,
   "environment": "production",
   "model_id": "019916f6-0e5a-7b34-8d1c-2f7e9a3b5c48",
-  "model": "anthropic/claude-sonnet-4",
-  "params": {"temperature": 0.4},
+  "model": "openai/gpt-4o-mini",
+  "params": {"temperature": 0.3},
   "provider_options": {},
   "prompt_pins": {"default": "019916f5-3c7d-7a12-9e8f-6b4d2a0c1e93"},
   "created_at": "2026-09-03T04:13:40.204518Z"
@@ -181,12 +185,12 @@ Without `--pin`, the newest committed version of every prompt is pinned. Without
 ## 7. Issue a runtime key
 
 ```sh
-PTN_KEY=$(prompton api-keys issue --name 'HeyDiary server' --quiet)
+PTN_KEY=$(prompton api-keys issue --name 'Helpdesk server' --quiet)
 echo "$PTN_KEY"
 ```
 
 ```text
-ptn_heydiary_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
+ptn_helpdesk_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
 ```
 
 The secret is printed once; the server keeps a hash. The key has both scopes (`resolve`, `logs`) and covers every environment of the project.
@@ -197,25 +201,25 @@ The secret is printed once; the server keeps a hash. The key has both scopes (`r
 curl -sS "__APP_URL__/api/v1/resolve" \
   -H "Authorization: Bearer $PTN_KEY" \
   -H 'content-type: application/json' \
-  -d '{"use_case": "diary_generation", "variables": {"transcriptions": ["a", "b"]}}'
+  -d '{"use_case": "support_reply", "variables": {"question": "My invoice shows two charges this month."}}'
 ```
 
 ```json
 {
-  "use_case": "diary_generation",
+  "use_case": "support_reply",
   "kind": "chat",
   "deployment": {"id": "019916f7-8b19-7c56-a3e2-5d0f1b7c9e64", "revision": 1},
   "prompt": "default",
   "prompts": ["default"],
   "model_id": "019916f6-0e5a-7b34-8d1c-2f7e9a3b5c48",
-  "model": "anthropic/claude-sonnet-4",
+  "model": "openai/gpt-4o-mini",
   "provider": "openrouter",
-  "effective_params": {"temperature": 0.4},
+  "effective_params": {"temperature": 0.3},
   "effective_provider_options": {},
   "prompt_version": {"id": "019916f5-3c7d-7a12-9e8f-6b4d2a0c1e93", "number": 1},
   "messages": [
-    {"role": "system", "content": "You write diaries from voice transcriptions."},
-    {"role": "user", "content": "Write a diary from:\n\n1. a\n2. b\n"}
+    {"role": "system", "content": "You are a friendly support agent for Acme. Answer in two or three sentences; if you are not sure, say so and offer to escalate."},
+    {"role": "user", "content": "My invoice shows two charges this month."}
   ],
   "warnings": [],
   "etag": "sha256-9f2e5c1a7b3d8e4f6a0c2b9d1e7f3a5c8b4d6e2f0a1c3b5d7e9f2a4c6b8d0e1f"
@@ -235,24 +239,24 @@ curl -sS "__APP_URL__/api/v1/generations" \
   -d "$(cat <<EOF
 {"generations": [{
   "id": "019916f9-c0a1-7d9a-8f2e-3b5d7c1a9e02",
-  "use_case": "diary_generation",
+  "use_case": "support_reply",
   "deployment_id": "019916f7-8b19-7c56-a3e2-5d0f1b7c9e64",
   "deployment_revision": 1,
   "prompt": "default",
   "prompt_version_id": "019916f5-3c7d-7a12-9e8f-6b4d2a0c1e93",
   "kind": "chat",
-  "model": "anthropic/claude-sonnet-4",
+  "model": "openai/gpt-4o-mini",
   "provider": "openrouter",
-  "params": {"temperature": 0.4},
-  "input": {"variables": {"transcriptions": ["a", "b"]},
-            "messages": [{"role": "system", "content": "You write diaries from voice transcriptions."},
-                         {"role": "user", "content": "Write a diary from:\n\n1. a\n2. b\n"}],
+  "params": {"temperature": 0.3},
+  "input": {"variables": {"question": "My invoice shows two charges this month."},
+            "messages": [{"role": "system", "content": "You are a friendly support agent for Acme. Answer in two or three sentences; if you are not sure, say so and offer to escalate."},
+                         {"role": "user", "content": "My invoice shows two charges this month."}],
             "truncated": false},
-  "output": {"content": "Today began with a, and then b.", "tool_calls": [], "truncated": false},
+  "output": {"content": "It looks like you were billed twice this month. I can check the invoice and refund the duplicate charge — could you confirm the date of the second one?", "tool_calls": [], "truncated": false},
   "status": "ok",
   "finish_reason": "stop",
-  "usage": {"input_tokens": 41, "output_tokens": 12, "cost_usd": 0.000303, "cost_source": "provider"},
-  "latency_ms": 1830,
+  "usage": {"input_tokens": 60, "output_tokens": 40, "cost_usd": 0.000033, "cost_source": "provider"},
+  "latency_ms": 940,
   "started_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }]}
 EOF
@@ -267,13 +271,13 @@ Run it again with the same `id` and the answer is `{"accepted": 0, "duplicates":
 
 ## 10. See it in the app
 
-- `__APP_URL__/personal/heydiary` is the project overview: the use case, its live deployment per environment, and the generations reported in the selected window.
-- `__APP_URL__/personal/heydiary/use-cases/diary_generation` opens the use case hub, where the prompt editor, the arena, and the deployment history live.
+- `__APP_URL__/personal/helpdesk` is the project overview: the use case, its live deployment per environment, and the generations reported in the selected window.
+- `__APP_URL__/personal/helpdesk/use-cases/support_reply` opens the use case hub, where the prompt editor, the arena, and the deployment history live.
 - `__APP_URL__/personal/usage` lists every generation recorded across the organization.
 
 ## What next
 
-- Open a second prompt name for a language variant: `prompton prompts open diary_generation ko --description Korean`, commit a version, and redeploy with `--pin default=latest --pin ko=latest`. The app selects it with `"prompt": "ko"`.
-- Promote to another environment with the same pins: `prompton deploy diary_generation --environment staging --model anthropic/claude-sonnet-4 --params '{"temperature":0.4}'`.
-- Roll back: `prompton rollback diary_generation --environment production --revision 1`.
+- Open a second prompt name for a language variant: `prompton prompts open support_reply ko --description Korean`, commit a version, and redeploy with `--pin default=latest --pin ko=latest`. The app selects it with `"prompt": "ko"`.
+- Promote to another environment with the same prompt version and model, at staging's own temperature: `prompton deploy support_reply --environment staging --model openai/gpt-4o-mini --params '{"temperature":0.7}'`.
+- Roll back: `prompton rollback support_reply --environment production --revision 1`.
 - Wire the app: the [agent reference](/agent) has the migration journey, the SDK status per language, and the local resolve algorithm; the [runtime API](/api) has every field.

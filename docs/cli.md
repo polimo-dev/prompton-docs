@@ -63,7 +63,7 @@ After login, with exactly one organization the CLI adopts it as the default. Wit
 
 ## Configuration and precedence
 
-Every value resolves in the same order: **flag, then environment variable, then config file, then built-in default**. A one-off `--org acme-inc` never disturbs what `prompton use` stored, and CI can set `PTN_TOKEN` with no config file at all.
+Every value resolves in the same order: **flag, then environment variable, then config file, then built-in default**. A one-off `--org acme` never disturbs what `prompton use` stored, and CI can set `PTN_TOKEN` with no config file at all.
 
 | Flag | Environment | Config key | Default |
 |---|---|---|---|
@@ -85,10 +85,10 @@ The config file is `~/.config/prompton/config.json` (`$XDG_CONFIG_HOME/prompton/
   "user": {"id": "019916f0-…", "email": "ada@example.com"},
   "organizations": [
     {"id": "019916f0-…", "name": "Ada", "personal": true},
-    {"id": "019916f1-…", "name": "Acme Inc", "slug": "acme-inc", "personal": false}
+    {"id": "019916f1-…", "name": "Acme", "slug": "acme", "personal": false}
   ],
-  "org": "acme-inc",
-  "project": "heydiary"
+  "org": "acme",
+  "project": "helpdesk"
 }
 ```
 
@@ -119,7 +119,7 @@ Available on every command.
 | `logout` | Revokes the token server-side, then clears it locally (the host is kept) | `prompton logout` |
 | `whoami` | The signed-in user, their organizations, and the active scope | `prompton whoami --json` |
 | `orgs list` | Organizations you belong to | `prompton orgs list` |
-| `use --org O [--project P]` | Remembers the default scope; both values are verified against the server first | `prompton use --org acme-inc --project heydiary` |
+| `use --org O [--project P]` | Remembers the default scope; both values are verified against the server first | `prompton use --org acme --project helpdesk` |
 
 `whoami --json` prints `{"host", "user", "organizations", "org", "project"}`. `login --json` prints `{"host", "user", "organizations", "org", "config"}` and never the token. `logout --json` prints `{"revoked": true, "config": "<path>"}`; with no stored session it prints `{"revoked": false, "reason": "no stored session"}`. Changing the organization with `use` forgets a remembered project, since projects belong to an organization.
 
@@ -128,7 +128,7 @@ Available on every command.
 | Command | What it does | Example |
 |---|---|---|
 | `projects list` | The organization's projects | `prompton projects list --json` |
-| `projects create <slug> [--name N] [--timezone TZ]` | Creates a project with its `production` and `staging` environments | `prompton projects create heydiary --name HeyDiary --timezone Asia/Seoul` |
+| `projects create <slug> [--name N] [--timezone TZ]` | Creates a project with its `production` and `staging` environments | `prompton projects create helpdesk --name Helpdesk --timezone Etc/UTC` |
 
 The slug is lowercase letters, digits, and hyphens, unique inside the organization. `--name` defaults to the slug; `--timezone` (IANA, for reporting) defaults to `Etc/UTC`.
 
@@ -137,9 +137,9 @@ The slug is lowercase letters, digits, and hyphens, unique inside the organizati
 | Command | What it does | Example |
 |---|---|---|
 | `use-cases list` | Every call site in the project | `prompton use-cases list` |
-| `use-cases get <key>` | The use case with its prompts, recent versions, and live deployments | `prompton use-cases get diary_generation --json` |
-| `use-cases create <key> [--kind chat\|text\|embedding] [--name N] [--description D] [--input-schema-file F] [--default-params JSON] [--tags a,b]` | Creates a use case; `--kind` defaults to `chat` | `prompton use-cases create diary_generation --kind chat --input-schema-file schema.json --default-params '{"temperature":0.5}'` |
-| `use-cases update <key> [--name N] [--description D] [--tags a,b] [--input-schema-file F] [--default-params JSON]` | Changes only the flags given; schema and params are replaced, not merged | `prompton use-cases update diary_generation --default-params '{"temperature":0.3}'` |
+| `use-cases get <key>` | The use case with its prompts, recent versions, and live deployments | `prompton use-cases get support_reply --json` |
+| `use-cases create <key> [--kind chat\|text\|embedding] [--name N] [--description D] [--input-schema-file F] [--default-params JSON] [--tags a,b]` | Creates a use case; `--kind` defaults to `chat` | `prompton use-cases create support_reply --kind chat --input-schema-file schema.json --default-params '{"temperature":0.5}'` |
+| `use-cases update <key> [--name N] [--description D] [--tags a,b] [--input-schema-file F] [--default-params JSON]` | Changes only the flags given; schema and params are replaced, not merged | `prompton use-cases update support_reply --default-params '{"temperature":0.3}'` |
 
 `--input-schema-file` takes a JSON array of fields (`{"name", "type", "required", "description", "example"}`) or an object with an `input_schema` array, so a file copied from a `get --json` response works unchanged; `-` reads stdin. The key and kind cannot change after creation. Aliases: `use-case`, `usecases`.
 
@@ -147,8 +147,8 @@ The slug is lowercase letters, digits, and hyphens, unique inside the organizati
 
 | Command | What it does | Example |
 |---|---|---|
-| `prompts open <use-case> <name> [--description D]` | Opens a new prompt name (`default` already exists for chat and text use cases) | `prompton prompts open diary_generation ko --description Korean` |
-| `prompts commit <use-case> <name> --file F [--engine liquid\|raw] [--message M] [--format auto\|messages\|text]` | Commits an immutable version | `prompton prompts commit diary_generation default --file messages.json --message "v1"` |
+| `prompts open <use-case> <name> [--description D]` | Opens a new prompt name (`default` already exists for chat and text use cases) | `prompton prompts open support_reply ko --description Korean` |
+| `prompts commit <use-case> <name> --file F [--engine liquid\|raw] [--message M] [--format auto\|messages\|text]` | Commits an immutable version | `prompton prompts commit support_reply default --file messages.json --message "v1"` |
 
 With `--format auto` (the default) a file holding a JSON array, or an object with a `messages` array, is committed as chat messages; anything else is committed as a text template, so a Liquid template that begins with `{%` is read as text rather than misparsed as JSON. `--file -` reads stdin. Alias: `prompt`.
 
@@ -157,7 +157,7 @@ With `--format auto` (the default) a file holding a JSON array, or an object wit
 | Command | What it does | Example |
 |---|---|---|
 | `models list` | The project's catalog | `prompton models list` |
-| `models register <model-id> [--display-name N] [--provider P]` | Adds a provider model; `--provider` is `openrouter` (default), `groq`, `openai`, `anthropic`, or `google` | `prompton models register anthropic/claude-sonnet-4` |
+| `models register <model-id> [--display-name N] [--provider P]` | Adds a provider model; `--provider` is `openrouter` (default), `groq`, `openai`, `anthropic`, or `google` | `prompton models register openai/gpt-4o-mini` |
 
 For OpenRouter models the server fills display name, pricing, context length, and capabilities from the public catalog; registration still succeeds when that lookup fails. The catalog id it prints is what a deployment pins. Alias: `model`.
 
@@ -165,9 +165,9 @@ For OpenRouter models the server fills display name, pricing, context length, an
 
 | Command | What it does | Example |
 |---|---|---|
-| `deploy <use-case> --model M [--environment E] [--params JSON] [--provider-options JSON] [--pin name=version ...]` | Commits a revision | `prompton deploy diary_generation --environment production --model anthropic/claude-sonnet-4 --params '{"temperature":0.4}' --pin default=1 --pin ko=latest` |
-| `deployments list <use-case> [--environment E]` | Without `--environment`: the live revision of every environment. With it: that environment's history, newest first | `prompton deployments list diary_generation --environment production` |
-| `rollback <use-case> --revision N [--environment E]` | Re-commits a past revision as a new, higher one | `prompton rollback diary_generation --environment production --revision 2` |
+| `deploy <use-case> --model M [--environment E] [--params JSON] [--provider-options JSON] [--pin name=version ...]` | Commits a revision | `prompton deploy support_reply --environment production --model openai/gpt-4o-mini --params '{"temperature":0.3}' --pin default=1 --pin ko=latest` |
+| `deployments list <use-case> [--environment E]` | Without `--environment`: the live revision of every environment. With it: that environment's history, newest first | `prompton deployments list support_reply --environment production` |
+| `rollback <use-case> --revision N [--environment E]` | Re-commits a past revision as a new, higher one | `prompton rollback support_reply --environment production --revision 2` |
 
 - `--model` takes a provider string or a catalog UUID. A provider string not yet in the catalog is registered on the way past.
 - `--pin name=version` takes a version number, the word `latest`, or a version UUID; it is repeatable. Numbers and `latest` are resolved through `use-cases get`, which carries the 20 most recent versions, so an older version has to be pinned by UUID. Omit `--pin` entirely to pin the newest committed version of every prompt.
@@ -180,7 +180,7 @@ Alias: `deployment`.
 
 | Command | What it does | Example |
 |---|---|---|
-| `api-keys issue [--name N] [--scopes resolve,logs]` | Mints a runtime key for the app; the secret is shown once | `prompton api-keys issue --name 'HeyDiary server' --scopes resolve,logs` |
+| `api-keys issue [--name N] [--scopes resolve,logs]` | Mints a runtime key for the app; the secret is shown once | `prompton api-keys issue --name 'Helpdesk server' --scopes resolve,logs` |
 | `api-keys list` | Live runtime keys, without secrets | `prompton api-keys list` |
 | `provider-key set [--secret S] [--label L]` | Stores the organization's OpenRouter key; the secret comes from `--secret`, then `PTN_OPENROUTER_KEY`, then a hidden prompt | `PTN_OPENROUTER_KEY=sk-or-v1-… prompton provider-key set` |
 | `provider-key status` | Whether a key is connected, and its masked hint | `prompton provider-key status` |
@@ -194,7 +194,7 @@ Alias: `deployment`.
 Under `--json`, stdout carries exactly one JSON document and nothing else, so `prompton … --json | jq` is always safe. Create and get commands print the object; list commands print `{"projects": [...]}`, `{"use_cases": [...]}`, `{"models": [...]}`, `{"deployments": [...]}`, `{"api_keys": [...]}`, or `{"organizations": [...]}`.
 
 ```sh
-prompton use-cases get diary_generation --json | jq -r '.deployments[].model'
+prompton use-cases get support_reply --json | jq -r '.deployments[].model'
 prompton projects list --json | jq -r '.projects[].slug'
 ```
 
@@ -228,16 +228,16 @@ Code 2 always means retyping the command can fix it.
 Creating something that already exists is HTTP 409, and the API returns the existing resource inside the error. The CLI prints that resource either way; the flag decides the exit code:
 
 ```sh
-prompton projects create heydiary                # exit 1: "already exists"
-prompton projects create heydiary --idempotent   # exit 0: prints the existing project
+prompton projects create helpdesk                # exit 1: "already exists"
+prompton projects create helpdesk --idempotent   # exit 0: prints the existing project
 ```
 
 It applies to `projects create`, `use-cases create`, `prompts open`, `models register`, and `provider-key set`. A provisioning script therefore runs cleanly the second time:
 
 ```sh
 set -e
-prompton projects create heydiary --idempotent --json > project.json
-prompton use-cases create diary_generation --kind chat --idempotent --json > uc.json
+prompton projects create helpdesk --idempotent --json > project.json
+prompton use-cases create support_reply --kind chat --idempotent --json > uc.json
 ```
 
 ## Logging out and other devices

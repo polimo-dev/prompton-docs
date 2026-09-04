@@ -62,10 +62,10 @@ Provisioning scripts run twice. Creating a project, use case, prompt, model, or 
 {
   "error": {
     "code": "conflict",
-    "message": "a project with key heydiary already exists",
+    "message": "a project with key helpdesk already exists",
     "details": {
       "project": {
-        "id": "019916f3-6a2e-7c41-8b5d-1f0a9c3e7d21", "slug": "heydiary", "name": "HeyDiary",
+        "id": "019916f3-6a2e-7c41-8b5d-1f0a9c3e7d21", "slug": "helpdesk", "name": "Helpdesk",
         "timezone": "Etc/UTC", "created_at": "2026-09-03T04:10:11.402113Z",
         "environments": [
           {"id": "019916f3-6a31-7d8a-9c02-4e5b7a1d0f33", "slug": "production", "name": "Production", "protected": true},
@@ -84,7 +84,7 @@ The key under `details` is `project`, `use_case`, `prompt`, `model`, or `provide
 | Where | Meaning |
 |---|---|
 | A model object's `id` | The catalog entry's UUID |
-| A model object's `model_id`, and `model_id` in `POST /models` | The provider-side string (`anthropic/claude-sonnet-4`) |
+| A model object's `model_id`, and `model_id` in `POST /models` | The provider-side string (`openai/gpt-4o-mini`) |
 | A deployment's `model_id`, and `model_id` in `POST /deployments` | The catalog entry's UUID |
 | A deployment's `model`, and `model` in `POST /deployments` | The provider-side string |
 
@@ -139,7 +139,7 @@ After approval, exactly once, `200`:
   "user": {"id": "019916f0-3a1b-7c2d-8e4f-5a6b7c8d9e0f", "email": "ada@example.com"},
   "organizations": [
     {"id": "019916f0-3a1c-7d3e-9f50-6b7c8d9e0f1a", "name": "Ada", "slug": null, "personal": true, "created_at": "2026-09-03T04:05:00.000000Z"},
-    {"id": "019916f1-4b2c-7e4f-a061-7c8d9e0f1a2b", "name": "Acme", "slug": "acme-inc", "personal": false, "created_at": "2026-09-01T10:00:00.000000Z"}
+    {"id": "019916f1-4b2c-7e4f-a061-7c8d9e0f1a2b", "name": "Acme", "slug": "acme", "personal": false, "created_at": "2026-09-01T10:00:00.000000Z"}
   ]
 }
 ```
@@ -211,7 +211,7 @@ Every organization the user can provision into, personal first.
 {
   "organizations": [
     {"id": "019916f0-3a1c-7d3e-9f50-6b7c8d9e0f1a", "name": "Ada", "slug": null, "personal": true, "created_at": "…"},
-    {"id": "019916f1-4b2c-7e4f-a061-7c8d9e0f1a2b", "name": "Acme", "slug": "acme-inc", "personal": false, "created_at": "…"}
+    {"id": "019916f1-4b2c-7e4f-a061-7c8d9e0f1a2b", "name": "Acme", "slug": "acme", "personal": false, "created_at": "…"}
   ]
 }
 ```
@@ -249,7 +249,7 @@ In the examples below `$PTN_TOKEN` is a CLI session token and `:org` is `persona
 {
   "projects": [
     {
-      "id": "019916f3-6a2e-7c41-8b5d-1f0a9c3e7d21", "slug": "heydiary", "name": "HeyDiary", "timezone": "Etc/UTC",
+      "id": "019916f3-6a2e-7c41-8b5d-1f0a9c3e7d21", "slug": "helpdesk", "name": "Helpdesk", "timezone": "Etc/UTC",
       "created_at": "2026-09-03T04:10:11.402113Z",
       "environments": [
         {"id": "019916f3-6a31-7d8a-9c02-4e5b7a1d0f33", "slug": "production", "name": "Production", "protected": true},
@@ -267,7 +267,7 @@ Archived projects are absent here and `404` when addressed.
 ```sh
 curl -sS -X POST "__APP_URL__/api/v1/orgs/personal/projects" \
   -H "Authorization: Bearer $PTN_TOKEN" -H 'content-type: application/json' \
-  -d '{"key": "heydiary", "name": "HeyDiary", "timezone": "Asia/Seoul"}'
+  -d '{"key": "helpdesk", "name": "Helpdesk", "timezone": "Etc/UTC"}'
 ```
 
 | Field | Required | Notes |
@@ -286,10 +286,11 @@ curl -sS -X POST "__APP_URL__/api/v1/orgs/personal/projects" \
 {
   "use_cases": [
     {
-      "id": "019916f4-12b0-7e6c-a1d3-8c9f2b4e6a57", "key": "diary_generation", "name": "Diary generation",
+      "id": "019916f4-12b0-7e6c-a1d3-8c9f2b4e6a57", "key": "support_reply", "name": "Support reply",
       "description": null, "kind": "chat",
-      "input_schema": [{"name": "transcriptions", "type": "list", "required": true, "description": null, "example": null}],
-      "default_params": {"temperature": 0.5}, "tags": [],
+      "input_schema": [{"name": "question", "type": "string", "required": true, "description": "The customer's message", "example": null},
+                       {"name": "plan", "type": "string", "required": false, "description": "free or pro", "example": null}],
+      "default_params": {"temperature": 0.5}, "tags": ["support"],
       "created_at": "2026-09-03T04:11:02.917345Z"
     }
   ]
@@ -299,11 +300,12 @@ curl -sS -X POST "__APP_URL__/api/v1/orgs/personal/projects" \
 ### POST /orgs/:org/projects/:project/use-cases
 
 ```sh
-curl -sS -X POST "__APP_URL__/api/v1/orgs/personal/projects/heydiary/use-cases" \
+curl -sS -X POST "__APP_URL__/api/v1/orgs/personal/projects/helpdesk/use-cases" \
   -H "Authorization: Bearer $PTN_TOKEN" -H 'content-type: application/json' \
-  -d '{"key": "diary_generation", "name": "Diary generation", "kind": "chat",
-       "input_schema": [{"name": "transcriptions", "type": "list", "required": true}],
-       "default_params": {"temperature": 0.5}, "tags": ["diary"]}'
+  -d '{"key": "support_reply", "name": "Support reply", "kind": "chat",
+       "input_schema": [{"name": "question", "type": "string", "required": true},
+                        {"name": "plan", "type": "string", "required": false}],
+       "default_params": {"temperature": 0.5}, "tags": ["support"]}'
 ```
 
 | Field | Required | Notes |
@@ -324,26 +326,27 @@ Everything about one use case in one call: the use case, each prompt with its 20
 
 ```json
 {
-  "id": "019916f4-12b0-7e6c-a1d3-8c9f2b4e6a57", "key": "diary_generation", "name": "Diary generation",
+  "id": "019916f4-12b0-7e6c-a1d3-8c9f2b4e6a57", "key": "support_reply", "name": "Support reply",
   "description": null, "kind": "chat",
-  "input_schema": [{"name": "transcriptions", "type": "list", "required": true, "description": null, "example": null}],
-  "default_params": {"temperature": 0.5}, "tags": [], "created_at": "2026-09-03T04:11:02.917345Z",
+  "input_schema": [{"name": "question", "type": "string", "required": true, "description": "The customer's message", "example": null},
+                   {"name": "plan", "type": "string", "required": false, "description": "free or pro", "example": null}],
+  "default_params": {"temperature": 0.5}, "tags": ["support"], "created_at": "2026-09-03T04:11:02.917345Z",
   "prompts": [
     {
       "id": "019916f4-12b8-7f01-b2e4-0d1a3c5e7f89", "name": "default", "description": null, "created_at": "…",
       "version_count": 2,
       "versions": [
-        {"id": "019916fb-…", "number": 2, "message": "shorter", "detected_variables": ["transcriptions"], "created_at": "…"},
-        {"id": "019916f5-3c7d-7a12-9e8f-6b4d2a0c1e93", "number": 1, "message": "migrated from the app's hardcoded prompt", "detected_variables": ["transcriptions"], "created_at": "…"}
+        {"id": "019916fb-…", "number": 2, "message": "shorter", "detected_variables": ["question"], "created_at": "…"},
+        {"id": "019916f5-3c7d-7a12-9e8f-6b4d2a0c1e93", "number": 1, "message": "migrated from the app's hardcoded prompt", "detected_variables": ["question"], "created_at": "…"}
       ]
     },
-    {"id": "019916fa-…", "name": "ko", "description": "Korean", "created_at": "…", "version_count": 1, "versions": [{"id": "019916fa-1b2c-7d3e-8f4a-5b6c7d8e9f01", "number": 1, "message": null, "detected_variables": ["transcriptions"], "created_at": "…"}]}
+    {"id": "019916fa-…", "name": "ko", "description": "Korean", "created_at": "…", "version_count": 1, "versions": [{"id": "019916fa-1b2c-7d3e-8f4a-5b6c7d8e9f01", "number": 1, "message": null, "detected_variables": ["question"], "created_at": "…"}]}
   ],
   "deployments": [
     {
       "id": "019916f7-8b19-7c56-a3e2-5d0f1b7c9e64", "revision": 3, "environment": "production",
-      "model_id": "019916f6-0e5a-7b34-8d1c-2f7e9a3b5c48", "model": "anthropic/claude-sonnet-4",
-      "params": {"temperature": 0.4}, "provider_options": {"only": ["Anthropic"]},
+      "model_id": "019916f6-0e5a-7b34-8d1c-2f7e9a3b5c48", "model": "openai/gpt-4o-mini",
+      "params": {"temperature": 0.3}, "provider_options": {"only": ["OpenAI"]},
       "prompt_pins": {"default": "019916fb-…", "ko": "019916fa-1b2c-7d3e-8f4a-5b6c7d8e9f01"},
       "created_at": "…"
     }
@@ -384,10 +387,10 @@ The name is what the app sends as `prompt`. `default` already exists for chat an
 ### POST /orgs/:org/projects/:project/use-cases/:key/prompts/:name/versions
 
 ```sh
-curl -sS -X POST "__APP_URL__/api/v1/orgs/personal/projects/heydiary/use-cases/diary_generation/prompts/default/versions" \
+curl -sS -X POST "__APP_URL__/api/v1/orgs/personal/projects/helpdesk/use-cases/support_reply/prompts/default/versions" \
   -H "Authorization: Bearer $PTN_TOKEN" -H 'content-type: application/json' \
-  -d '{"messages": [{"role": "system", "content": "You write diaries from voice transcriptions."},
-                    {"role": "user", "content": "Write a diary from:\n\n{% for t in transcriptions %}{{ forloop.index }}. {{ t }}\n{% endfor %}"}],
+  -d '{"messages": [{"role": "system", "content": "You are a friendly support agent for Acme. Answer in two or three sentences; if you are not sure, say so and offer to escalate."},
+                    {"role": "user", "content": "{{ question }}"}],
        "engine": "liquid", "message": "migrated from the app'"'"'s hardcoded prompt"}'
 ```
 
@@ -404,10 +407,10 @@ curl -sS -X POST "__APP_URL__/api/v1/orgs/personal/projects/heydiary/use-cases/d
 {
   "id": "019916f5-3c7d-7a12-9e8f-6b4d2a0c1e93", "prompt_id": "019916f4-12b8-7f01-b2e4-0d1a3c5e7f89",
   "number": 1, "engine": "liquid",
-  "messages": [{"role": "system", "content": "You write diaries from voice transcriptions."},
-               {"role": "user", "content": "Write a diary from:\n\n{% for t in transcriptions %}{{ forloop.index }}. {{ t }}\n{% endfor %}"}],
+  "messages": [{"role": "system", "content": "You are a friendly support agent for Acme. Answer in two or three sentences; if you are not sure, say so and offer to escalate."},
+               {"role": "user", "content": "{{ question }}"}],
   "text_template": null,
-  "detected_variables": ["transcriptions"],
+  "detected_variables": ["question"],
   "message": "migrated from the app's hardcoded prompt",
   "content_sha256": "…", "created_at": "…"
 }
@@ -424,10 +427,10 @@ Versions are immutable; committing again yields `number + 1`. Committing alone c
   "models": [
     {
       "id": "019916f6-0e5a-7b34-8d1c-2f7e9a3b5c48",
-      "provider": "openrouter", "model_id": "anthropic/claude-sonnet-4", "display_name": "Anthropic: Claude Sonnet 4",
-      "metadata": {}, "provider_options": {"only": ["Anthropic"]},
-      "pricing": {"input_per_m": 3.0, "output_per_m": 15.0, "currency": "USD", "unit": "token"},
-      "context_length": 200000, "capabilities": ["tools", "streaming"],
+      "provider": "openrouter", "model_id": "openai/gpt-4o-mini", "display_name": "OpenAI: GPT-4o-mini",
+      "metadata": {}, "provider_options": {"only": ["OpenAI"]},
+      "pricing": {"input_per_m": 0.15, "output_per_m": 0.6, "currency": "USD", "unit": "token"},
+      "context_length": 128000, "capabilities": ["tools", "streaming"],
       "status": "active", "created_at": "…"
     }
   ]
@@ -439,13 +442,13 @@ Archived entries are excluded; `deprecated` ones remain, since a live deployment
 ### POST /orgs/:org/projects/:project/models
 
 ```json
-{"model_id": "anthropic/claude-sonnet-4",
+{"model_id": "openai/gpt-4o-mini",
  "provider": "openrouter",
- "display_name": "Claude Sonnet 4",
- "metadata": {"description_key": "chat_model.sonnet4"},
- "provider_options": {"only": ["Anthropic"]},
- "pricing": {"input_per_m": 3.0, "output_per_m": 15.0, "currency": "USD", "unit": "token"},
- "context_length": 200000,
+ "display_name": "GPT-4o-mini",
+ "metadata": {"description_key": "chat_model.gpt_4o_mini"},
+ "provider_options": {"only": ["OpenAI"]},
+ "pricing": {"input_per_m": 0.15, "output_per_m": 0.6, "currency": "USD", "unit": "token"},
+ "context_length": 128000,
  "capabilities": ["tools", "streaming"],
  "status": "active"}
 ```
@@ -466,8 +469,8 @@ Only `model_id` is required. `provider` defaults to `openrouter` (also `groq`, `
   "deployments": [
     {
       "id": "019916f7-8b19-7c56-a3e2-5d0f1b7c9e64", "revision": 3, "environment": "production",
-      "model_id": "019916f6-0e5a-7b34-8d1c-2f7e9a3b5c48", "model": "anthropic/claude-sonnet-4",
-      "params": {"temperature": 0.4}, "provider_options": {"allow_fallbacks": false},
+      "model_id": "019916f6-0e5a-7b34-8d1c-2f7e9a3b5c48", "model": "openai/gpt-4o-mini",
+      "params": {"temperature": 0.3}, "provider_options": {"allow_fallbacks": false},
       "prompt_pins": {"default": "019916fb-…", "ko": "019916fa-1b2c-7d3e-8f4a-5b6c7d8e9f01"},
       "created_at": "…"
     }
@@ -478,10 +481,10 @@ Only `model_id` is required. `provider` defaults to `openrouter` (also `groq`, `
 ### POST /orgs/:org/projects/:project/use-cases/:key/deployments
 
 ```sh
-curl -sS -X POST "__APP_URL__/api/v1/orgs/personal/projects/heydiary/use-cases/diary_generation/deployments" \
+curl -sS -X POST "__APP_URL__/api/v1/orgs/personal/projects/helpdesk/use-cases/support_reply/deployments" \
   -H "Authorization: Bearer $PTN_TOKEN" -H 'content-type: application/json' \
-  -d '{"environment": "production", "model": "anthropic/claude-sonnet-4",
-       "params": {"temperature": 0.4}, "provider_options": {"allow_fallbacks": false}}'
+  -d '{"environment": "production", "model": "openai/gpt-4o-mini",
+       "params": {"temperature": 0.3}, "provider_options": {"allow_fallbacks": false}}'
 ```
 
 | Field | Required | Notes |
@@ -512,7 +515,7 @@ Promotion is this request again with another `environment` and the same `model_i
 ```json
 {
   "api_keys": [
-    {"id": "019916f8-4d2c-7e78-b5f1-7a3c9d0e2f16", "name": "HeyDiary server", "key_prefix": "ptn_heydiary_a1b",
+    {"id": "019916f8-4d2c-7e78-b5f1-7a3c9d0e2f16", "name": "Helpdesk server", "key_prefix": "ptn_helpdesk_a1b",
      "scopes": ["resolve", "logs"], "last_used_at": "2026-09-03T05:00:00.000000Z", "created_at": "…"}
   ]
 }
@@ -523,16 +526,16 @@ No secrets; revoked keys are absent.
 ### POST /orgs/:org/projects/:project/api-keys
 
 ```json
-{"name": "HeyDiary server", "scopes": ["resolve", "logs"]}
+{"name": "Helpdesk server", "scopes": ["resolve", "logs"]}
 ```
 
 `name` defaults to `CLI key`; `scopes` defaults to both. `201`:
 
 ```json
 {
-  "id": "019916f8-4d2c-7e78-b5f1-7a3c9d0e2f16", "name": "HeyDiary server", "key_prefix": "ptn_heydiary_a1b",
+  "id": "019916f8-4d2c-7e78-b5f1-7a3c9d0e2f16", "name": "Helpdesk server", "key_prefix": "ptn_helpdesk_a1b",
   "scopes": ["resolve", "logs"], "last_used_at": null, "created_at": "…",
-  "key": "ptn_heydiary_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+  "key": "ptn_helpdesk_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
 }
 ```
 

@@ -17,11 +17,11 @@ Everything below is addressed by name in URLs and in the API: an organization by
 
 ## Organization
 
-The top-level account boundary. Every user has a **personal** organization, created on first sign-in. It has no slug; in URLs and API paths it is the reserved segment `personal` (`__APP_URL__/personal`, `/api/v1/orgs/personal/…`). A **team** organization has a slug (`acme-inc`) and members. The organization owns the BYOK provider key, its members, and usage reporting. Turning a personal organization into a team one is a matter of claiming a slug on `__APP_URL__/personal/settings?tab=general`.
+The top-level account boundary. Every user has a **personal** organization, created on first sign-in. It has no slug; in URLs and API paths it is the reserved segment `personal` (`__APP_URL__/personal`, `/api/v1/orgs/personal/…`). A **team** organization has a slug (`acme`) and members. The organization owns the BYOK provider key, its members, and usage reporting. Turning a personal organization into a team one is a matter of claiming a slug on `__APP_URL__/personal/settings?tab=general`.
 
 ## Project
 
-A project belongs to one organization and is identified by a slug that is unique inside that organization (`heydiary`). It owns the runtime API keys, the environments, the model catalog, and the default payload policy for monitoring logs. Web URL: `__APP_URL__/{org}/{project}`.
+A project belongs to one organization and is identified by a slug that is unique inside that organization (`helpdesk`). It owns the runtime API keys, the environments, the model catalog, and the default payload policy for monitoring logs. Web URL: `__APP_URL__/{org}/{project}`.
 
 ## Environment
 
@@ -29,7 +29,7 @@ Every project is created with two environments: `production` (protected) and `st
 
 ## Use case
 
-One use case per place your app calls an LLM. Its **key** (`diary_generation`, lowercase `[a-z0-9_]` starting with a letter) is the app's contract and cannot be renamed; make a new use case instead. Fields:
+One use case per place your app calls an LLM. Its **key** (`support_reply`, lowercase `[a-z0-9_]` starting with a letter) is the app's contract and cannot be renamed; make a new use case instead. Fields:
 
 | Field | Meaning |
 |---|---|
@@ -63,7 +63,7 @@ There are no rules, weights, conditions, or A/B splits. The revision is live the
 
 ## Model
 
-Each project has a model catalog. A catalog entry has an `id` (the UUID a deployment pins), a `provider` (`openrouter` by default; also `groq`, `openai`, `anthropic`, `google`), and a provider-side `model_id` string such as `anthropic/claude-sonnet-4`, plus `display_name`, `pricing` (USD per million tokens), `context_length`, `capabilities`, and `status` (`active` or `deprecated`). For OpenRouter models the server fills display name, pricing, and context length from the public OpenRouter catalog when you do not supply them. Deploying with a provider string that is not in the catalog registers it on the way past.
+Each project has a model catalog. A catalog entry has an `id` (the UUID a deployment pins), a `provider` (`openrouter` by default; also `groq`, `openai`, `anthropic`, `google`), and a provider-side `model_id` string such as `openai/gpt-4o-mini`, plus `display_name`, `pricing` (USD per million tokens), `context_length`, `capabilities`, and `status` (`active` or `deprecated`). For OpenRouter models the server fills display name, pricing, and context length from the public OpenRouter catalog when you do not supply them. Deploying with a provider string that is not in the catalog registers it on the way past.
 
 The organization's **provider key** is a BYOK OpenRouter key. PromptOn uses it only where PromptOn itself calls a model: the arena and AI drafts. Your app's own traffic never needs it, so onboarding finishes without one.
 
