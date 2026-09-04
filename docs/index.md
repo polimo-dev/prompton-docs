@@ -18,8 +18,9 @@ This is the prompt from the landing page. Paste it into Claude Code, Codex, Curs
 Set up PromptOn for this app. Read __DOCS_URL__/agent first and
 follow it step by step.
 
-1. Tell me what PromptOn is: one line, a before-and-after code example, and
-   why it isn't a proxy.
+1. Tell me what PromptOn is: one line, a before-and-after code example, why
+   it isn't a proxy, and what it automates (picking the model and prompt per
+   use case, evaluating generations, catching drift).
 2. Make sure you can see this project's code. If you can't, tell me to paste
    this into an AI that can, and stop. If you see several projects, ask which.
 3. Check the fit: find every LLM call. PromptOn is for apps whose server calls
