@@ -204,7 +204,7 @@ Errors:
 | 404 | `not_found` | `{"key": "nope"}` | Unknown use case |
 | 404 | `not_found` | `{"environment": "canary"}` | Unknown environment |
 | 404 | `not_found` | `{"reason": "unresolved"}` | No live deployment in that environment |
-| 404 | `not_found` | `{"reason": "unknown_prompt", "prompt": "ja", "available_prompts": ["default", "ko"]}` | The name is not pinned by the live revision |
+| 404 | `not_found` | `{"reason": "unknown_prompt", "prompt": "ja", "prompt_names": ["default", "ko"]}` | The name is not pinned by the live revision |
 
 ## POST /logs
 

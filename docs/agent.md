@@ -615,7 +615,7 @@ Poll every 10 s by default with `If-None-Match` (a `304` costs nothing); keep th
  "warnings": [], "etag": "sha256-…"}
 ```
 
-Errors: 400 `invalid_request` — `variables` not an object, `prompt` not a non-empty string, environment not a string, or a required variable missing (`{"details": {"missing_variable": "question"}}`); 404 `not_found` — unknown use case (`{"details": {"key": "nope"}}`), no live deployment (`{"details": {"reason": "unresolved"}}`), unpinned prompt name (`{"details": {"reason": "unknown_prompt", "prompt": "ja", "available_prompts": ["default", "ko"]}}`), unknown environment. Not cached: a just-committed revision shows immediately.
+Errors: 400 `invalid_request` — `variables` not an object, `prompt` not a non-empty string, environment not a string, or a required variable missing (`{"details": {"missing_variable": "question"}}`); 404 `not_found` — unknown use case (`{"details": {"key": "nope"}}`), no live deployment (`{"details": {"reason": "unresolved"}}`), unpinned prompt name (`{"details": {"reason": "unknown_prompt", "prompt": "ja", "prompt_names": ["default", "ko"]}}`), unknown environment. Not cached: a just-committed revision shows immediately.
 
 ### 4.3 `POST /logs?environment=production` — monitoring logs
 
@@ -680,7 +680,7 @@ Rules:
 | 401 on `/use-cases`, `/use-cases/:key/prompt`, `/logs` | runtime key missing/wrong/revoked, its project archived, or a **CLI token** used on the runtime door | issue a key: `prompton api-keys issue` |
 | 403 `forbidden` on the runtime API | key lacks the scope (`read` or `logs`) | issue a key with both scopes |
 | 404 `not_found` with `details.organization` / `details.project` | you are not a member, or it does not exist — non-members get 404, never 403 | `prompton orgs list`, `prompton projects list`; check `--org` |
-| 404 with `details.key` / `details.prompt` + `available_prompts` / `details.environment` | wrong name; the details list what exists | fix the name; open the prompt with `prompts open` |
+| 404 with `details.key` / `details.prompt` + `prompt_names` / `details.environment` | wrong name; the details list what exists | fix the name; open the prompt with `prompts open` |
 | 404 `details.reason = "unresolved"` | the use case has no live deployment in that environment | `prompton deploy <use-case> --environment <env> --model …` |
 | 404 `details.reason = "unknown_prompt"` | the requested `prompt` is not pinned by the live revision | pin it (`--pin name=latest`) and redeploy, or send a pinned name |
 | 400 `details.missing_variable` | template needs a variable the call did not send | send it; mirror `detected_variables` in `input_schema` |
